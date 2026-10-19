@@ -1,6 +1,6 @@
-# **💁 Witty HandUp - Task Management System**  
+# ** Witty HandUp - Task Management System**  
 
-## **📖 Table of Contents**  
+## ** Table of Contents**  
 1. [Project Overview](#-project-overview)  
 2. [Features](#-features)  
 3. [Tech Stack](#-tech-stack)  
@@ -13,7 +13,7 @@
 
 ---
 
-## **🌍 Project Overview**  
+## ** Project Overview**  
 **Witty HandUp** is a community-driven task management platform where users can:  
 - **Post tasks** they need help with (errands, repairs, education, etc.).  
 - **Claim tasks** posted by others.  
@@ -24,28 +24,28 @@ Built with **MERN Stack (MongoDB, Express.js, React, Node.js)** + **Material-UI*
 
 ---
 
-## **✨ Features**  
-### **🔹 User Roles & Task Flow**  
+## ** Features**  
+### ** User Roles & Task Flow**  
 | Role | Actions |
 |------|---------|
 | **Requester** | Create, Edit, Delete tasks |
 | **Helper** | Claim & Complete tasks |
 | **All Users** | View tasks, filter by location |
 
-### **🔹 Task Status**  
-- **🟡 Open** – Available for claiming  
-- **🔵 Claimed** – Taken by a helper  
-- **🟢 Completed** – Finished  
+### ** Task Status**  
+- ** Open** – Available for claiming  
+- ** Claimed** – Taken by a helper  
+- ** Completed** – Finished  
 
-### **🔹 Key Functionalities**  
-✅ **Real-time updates** (task status changes)  
-✅ **Location-based task filtering** (10km radius)  
-✅ **User profiles with contact info** (email)  
-✅ **Responsive UI** (works on mobile & desktop)  
+### ** Key Functionalities**  
+- **Real-time updates** (task status changes)  
+- **Location-based task filtering** (10km radius)  
+- **User profiles with contact info** (email)  
+- **Responsive UI** (works on mobile & desktop)  
 
 ---
 
-## **💻 Tech Stack**  
+## ** Tech Stack**  
 ### **Backend**  
 - **Node.js** (Runtime)  
 - **Express.js** (API Framework)  
@@ -66,7 +66,7 @@ Built with **MERN Stack (MongoDB, Express.js, React, Node.js)** + **Material-UI*
 
 ---
 
-## **⚙️ Installation & Setup**  
+## ** Installation & Setup**  
 
 ### **1. Backend Setup**  
 ```bash
@@ -90,9 +90,9 @@ npm start  # Runs on http://localhost:5173
 
 ---
 
-## **📡 API Documentation**  
+## ** API Documentation**  
 
-### **🔹 Task Endpoints**  
+### ** Task Endpoints**  
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/api/tasks` | Get all tasks (open + claimed) |
@@ -101,17 +101,17 @@ npm start  # Runs on http://localhost:5173
 | `PUT` | `/api/tasks/:id/complete` | Mark as completed |
 | `DELETE` | `/api/tasks/:id` | Delete a task |
 
-### **🔹 User Authentication**  
+### ** User Authentication**  
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST` | `/api/auth/register` | Register new user |
 | `POST` | `/api/auth/login` | Login & get JWT token |
 
-📌 **Full API Docs:** [Postman Collection](https://documenter.getpostman.com/view/123456/WittyHandUp-API)  
+ **Full API Docs:** [Postman Collection](https://documenter.getpostman.com/view/123456/WittyHandUp-API)  
 
 ---
 
-## **🧪 Testing**  
+## ** Testing**  
 
 ### **1. Backend Tests**  
 ```bash
@@ -136,13 +136,13 @@ npm test  # Runs React Testing Library
 
 ---
 
-## **🚀 CI/CD Pipeline**  
+## ** CI/CD Pipeline**  
 
 ### **GitHub Actions Workflow**  
 - **On `push` to `main`:**  
-  ✅ Run backend & frontend tests  
-  ✅ Build Docker containers  
-  ✅ Deploy to AWS (if tests pass)  
+  - Run backend & frontend tests  
+  - Build Docker containers  
+  - Deploy to AWS (if tests pass)  
 
 ### **Docker Setup**  
 ```dockerfile
@@ -162,16 +162,16 @@ docker-compose up --build  # Runs full app (frontend + backend + DB)
 
 ---
 
-## **🛠 Troubleshooting**  
+## ** Troubleshooting**  
 
-### **🔹 Common Issues**  
+### ** Common Issues**  
 | Problem | Solution |
 |---------|----------|
 | Tasks not showing after claiming | Check backend `getTasks` includes `claimed` status |
 | Helper info missing | Ensure `populate("helper")` in API response |
 | Location filter not working | Verify MongoDB `2dsphere` index exists |
 
-### **🔹 Debugging Tips**  
+### ** Debugging Tips**  
 1. **Check API responses** in browser DevTools (Network tab).  
 2. **Log task data** in `TaskCard.jsx`:  
    ```js
@@ -181,7 +181,7 @@ docker-compose up --build  # Runs full app (frontend + backend + DB)
 
 ---
 
-## **🔮 Future Improvements**  
+## ** Future Improvements**  
 - **Real-time chat** between users  
 - **Task categories & search**  
 - **User ratings & reviews**  
@@ -189,17 +189,17 @@ docker-compose up --build  # Runs full app (frontend + backend + DB)
 
 ---
 
-## **🎯 Conclusion**  
+## ** Conclusion**  
 Witty HandUp simplifies task delegation in communities. With **secure auth**, **real-time updates**, and **location-based filtering**, it’s a robust solution for local assistance.  
 
-**🚀 Happy Helping!**  
+** Happy Helping!**  
 
-📌 **GitHub Repo:** [https://github.com/jacobkau/HandUp.git](https://github.com/jacobkau/HandUp.git)  
-📧 **Contact:** [mailto:kaujacob4@gmail.com](kaujacob4@gmail.com)  
+ **GitHub Repo:** [https://github.com/jacobkau/HandUp.git](https://github.com/jacobkau/HandUp.git)  
+ **Contact:** [mailto:kaujacob4@gmail.com](kaujacob4@gmail.com)  
 
 --- 
 
-## 📸 Screenshots Gallery
+## Screenshots Gallery
 
 <p align="center">
   <img src="./images/1.png" width="200" alt="Screenshot 1" />
