@@ -195,7 +195,7 @@ Witty HandUp simplifies task delegation in communities. With **secure auth**, **
 ** Happy Helping!**  
 
  **GitHub Repo:** [https://github.com/jacobkau/HandUp.git](https://github.com/jacobkau/HandUp.git)  
- **Contact:** [mailto:kaujacob4@gmail.com](kaujacob4@gmail.com)  
+ **Contact:** [wittyhighbrowtechnologies@gmail.com](wittyhighbrowtechnologies@gmail.com)  
 
 --- 
 
@@ -215,17 +215,9 @@ Witty HandUp simplifies task delegation in communities. With **secure auth**, **
 --- 
 
 ## 🌍 Live Demo
-**Backend**
-🔗 [Witty HandUp Live on Render](https://handup.onrender.com)
 
 **Frontend**
 🔗 [Witty HandUp Live on Vercel](https://wittyhandupsystem.vercel.app/)
-
-## 🎥 Video Demo
-
-📺 [Watch the full walkthrough on YouTube](https://youtu.be/43tpj-NikrY)
---- 
-
 
 ### **License**  
 MIT © 2023 Witty HandUp Team
