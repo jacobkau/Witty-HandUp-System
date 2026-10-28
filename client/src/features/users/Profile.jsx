@@ -12,7 +12,7 @@ import {
   Person as PersonIcon, Email as EmailIcon, CalendarToday as CalendarIcon,
   AdminPanelSettings as AdminIcon, ArrowBack as ArrowBackIcon, 
   Edit as EditIcon, Save as SaveIcon, Cancel as CancelIcon,
-  Visibility, VisibilityOff
+  Visibility, VisibilityOff, Phone as PhoneIcon
 } from '@mui/icons-material';
 
 export default function Profile() {
@@ -24,7 +24,7 @@ export default function Profile() {
   // Edit Mode State
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
@@ -54,7 +54,12 @@ export default function Profile() {
   }, [fetchProfile, authUser]);
 
   const handleEditClick = () => {
-    setFormData({ name: user.name, email: user.email, password: '' });
+    setFormData({ 
+      name: user.name || '', 
+      email: user.email || '', 
+      phone: user.phone || '', 
+      password: '' 
+    });
     setIsEditing(true);
   };
 
@@ -123,6 +128,25 @@ export default function Profile() {
               <Stack spacing={3}>
                 <TextField label="Full Name" fullWidth value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
                 <TextField label="Email Address" type="email" fullWidth value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
+                
+                {/* NEW: Phone Number Field */}
+                <TextField 
+                  label="Phone Number (for Task Contact)" 
+                  type="tel" 
+                  fullWidth 
+                  value={formData.phone} 
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
+                  placeholder="+254 700 000000"
+                  helperText="Helpers will use this to call you if needed"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PhoneIcon color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
                 <TextField 
                   label="New Password (leave blank to keep current)" 
                   type={showPassword ? 'text' : 'password'} 
@@ -165,6 +189,16 @@ export default function Profile() {
                   </Stack>
                   <Typography variant="body1">{user.email}</Typography>
                 </Box>
+                
+                {/* NEW: Phone Number Display */}
+                <Box>
+                  <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
+                    <PhoneIcon fontSize="small" color="action" />
+                    <Typography variant="caption" fontWeight="bold" color="text.secondary" textTransform="uppercase">Phone Number</Typography>
+                  </Stack>
+                  <Typography variant="body1">{user.phone || "Not provided"}</Typography>
+                </Box>
+
                 <Box>
                   <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
                     <CalendarIcon fontSize="small" color="action" />
