@@ -82,7 +82,6 @@ export const updateTask = async (req, res) => {
       return res.status(403).json({ success: false, error: "Not authorized to update this task" });
     }
 
-    // Cannot update claimed or completed tasks
     if (task.status !== "open") {
       return res.status(400).json({ success: false, error: "Only open tasks can be updated" });
     }
@@ -129,15 +128,17 @@ export const claimTask = async (req, res) => {
       .populate("requester", "name email")
       .populate("helper", "name email");
 
-    // SEND EMAIL TO REQUESTER
+    // SEND EMAIL TO REQUESTER 
     if (populatedTask.requester?.email) {
-      const emailHtml = `
-        <h2 style="color: #111827; margin-top: 0; font-size: 20px;">Good news! Your task was claimed.</h2>
-        <p>Hi ${populatedTask.requester.name},</p>
-        <p><strong>${populatedTask.helper.name}</strong> has claimed your task: <strong>"${populatedTask.title}"</strong>.</p>
-        <p>They will be in touch with you shortly at this email address (${populatedTask.requester.email}) to coordinate.</p>
-      `;
-      await sendEmail(populatedTask.requester.email, 'Your task has been claimed!', emailHtml);
+      const emailText = `Hello ${populatedTask.requester.name},
+
+Good news! Your task "${populatedTask.title}" has been claimed by ${populatedTask.helper.name}.
+
+They will be in touch with you shortly at this email address (${populatedTask.requester.email}) to coordinate.
+
+Thank you for using Witty HandUp!`;
+      
+      await sendEmail(populatedTask.requester.email, 'Your task has been claimed!', emailText);
     }
 
     const io = getIO();
@@ -170,23 +171,29 @@ export const completeTask = async (req, res) => {
     task.status = "completed";
     const updatedTask = await task.save();
 
-    // SEND EMAIL TO THE OTHER PARTY
+    // SEND EMAIL TO THE OTHER PARTY 
     if (isHelper && task.requester?.email) {
-      const emailHtml = `
-        <h2 style="color: #111827; margin-top: 0; font-size: 20px;">Task Completed!</h2>
-        <p>Hi ${task.requester.name},</p>
-        <p><strong>${task.helper.name}</strong> has marked the task <strong>"${task.title}"</strong> as completed.</p>
-        <p>Please log in to your dashboard to review and confirm.</p>
-      `;
-      await sendEmail(task.requester.email, 'Task Completed!', emailHtml);
+      const emailText = `Hello ${task.requester.name},
+
+${task.helper.name} has marked the task "${task.title}" as completed.
+
+Please log in to your dashboard to review and confirm.
+
+Thank you for using Witty HandUp!`;
+      
+      await sendEmail(task.requester.email, 'Task Completed!', emailText);
+      
     } else if ((isRequester || isAdmin) && task.helper?.email) {
-      const emailHtml = `
-        <h2 style="color: #111827; margin-top: 0; font-size: 20px;">Task Confirmed Complete</h2>
-        <p>Hi ${task.helper.name},</p>
-        <p><strong>${task.requester.name}</strong> has confirmed that the task <strong>"${task.title}"</strong> is complete.</p>
-        <p>Thank you for your help in the community!</p>
-      `;
-      await sendEmail(task.helper.email, 'Task Confirmed Complete', emailHtml);
+      const emailText = `Hello ${task.helper.name},
+
+${task.requester.name} has confirmed that the task "${task.title}" is complete.
+
+Thank you for your help in the community!
+
+Best regards,
+The Witty HandUp Team`;
+      
+      await sendEmail(task.helper.email, 'Task Confirmed Complete', emailText);
     }
 
     const io = getIO();
