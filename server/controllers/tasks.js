@@ -2,12 +2,23 @@ import Task from "../models/Task.js";
 import { getIO } from "../sockets/socket.js";
 import { sendEmail } from "../utils/sendEmail.js";
 
-// @desc    Get all tasks (with location filtering)
+// @desc    Get all tasks (with location filtering, pagination, and tab filtering)
 // @route   GET /api/tasks
 export const getTasks = async (req, res) => {
   try {
-    // Show all non-completed tasks
-    let query = { status: { $ne: "completed" } };
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10; 
+    const skip = (page - 1) * limit;
+
+    let query = {};
+
+    if (req.query.admin === 'true') {
+      if (req.query.status) {
+        query.status = req.query.status;
+      }
+    } else {
+      query.status = req.query.status || { $ne: "completed" };
+    }
 
     if (req.query.longitude && req.query.latitude) {
       query.location = {
@@ -21,13 +32,22 @@ export const getTasks = async (req, res) => {
       };
     }
 
+    const total = await Task.countDocuments(query);
     const tasks = await Task.find(query)
       .populate("requester", "name email phone")
       .populate("helper", "name email phone")
       .populate("createdBy", "name")
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({ success: true, data: tasks });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+    res.status(200).json({ 
+      success: true, 
+      count: tasks.length,
+      total,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      data: tasks 
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
