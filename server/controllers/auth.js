@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -121,6 +122,76 @@ export const updateProfile = async (req, res) => {
         updatedAt: updatedUser.updatedAt
       }
     });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// @desc    Forgot Password
+// @route   POST /api/auth/forgotpassword
+export const forgotPassword = async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.body.email });
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'There is no user with that email' });
+    }
+    const resetToken = user.getResetPasswordToken();
+    await user.save({ validateBeforeSave: false });
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
+
+    const emailText = `Hello ${user.name},
+
+You are receiving this email because you (or someone else) requested a password reset for your Witty HandUp account.
+
+Please click the link below to reset your password:
+${resetUrl}
+
+If you did not request this, please ignore this email and your password will remain unchanged.
+
+This link will expire in 10 minutes.`;
+
+    try {
+      await sendEmail(user.email, 'Password Reset Request', emailText);
+      res.status(200).json({ success: true, data: 'Email sent' });
+    } catch (err) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+      return res.status(500).json({ success: false, error: 'Email could not be sent' });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// @desc    Reset Password
+// @route   PUT /api/auth/resetpassword/:resettoken
+export const resetPassword = async (req, res) => {
+  try {
+    const resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(req.params.resettoken)
+      .digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() } 
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired token' });
+    }
+
+    user.password = req.body.password;
+    
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    
+    await user.save();
+
+    res.status(200).json({ success: true, message: 'Password reset successful. You can now login.' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
