@@ -2,7 +2,7 @@ import useAuth from "../auth/useAuth";
 import api from "../../lib/api";
 import ChatBox from "./ChatBox";
 import {
-  Button, Card, CardContent, Typography, Chip, Stack, Box, IconButton, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, Avatar, Link, Badge, Divider
+  Button, Card, CardContent, Typography, Chip, Stack, Box, IconButton, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, Avatar, Badge, Divider
 } from "@mui/material";
 import {
   CheckCircle as CheckCircleIcon, 
@@ -33,14 +33,12 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
   
   const [showMap, setShowMap] = useState(false);
   const [ratingValue, setRatingValue] = useState(0);
-  const [isRated, setIsRated] = useState(task?.isRated || false);
+  const [isRated, setIsRated] = useState(task?.isRated === true);
 
-  // Keep local state in sync if task prop changes (e.g., after being rated in another tab)
   useEffect(() => {
-    setIsRated(task?.isRated || false);
+    setIsRated(task?.isRated === true);
   }, [task?.isRated]);
 
-  // BULLETPROOF ID CHECKS
   const currentUserId = user?._id || user?.id;
   const requesterId = task?.requester?._id || task?.createdBy?._id || task?.requester || task?.createdBy;
   
@@ -53,7 +51,6 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
   
   const canClaim = !isCreator && !isAdmin && task?.status === "open" && !isClaimer;
 
-  // Map Coordinates
   const lng = task?.location?.coordinates?.[0] || 0;
   const lat = task?.location?.coordinates?.[1] || 0;
   const hasValidLocation = lng !== 0 && lat !== 0;
@@ -114,10 +111,9 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
     if (ratingValue < 1 || ratingValue > 5) return;
     setIsProcessing(true);
     try {
-      await api.post(`/tasks/${task._id}/rate`, { rating: ratingValue });
+      const res = await api.post(`/tasks/${task._id}/rate`, { rating: ratingValue });
       setIsRated(true);
-      // Optional: Update parent state to reflect rating
-      if (onUpdate) onUpdate({ ...task, isRated: true, ratingValue });
+      if (onUpdate) onUpdate(res.data.data);
     } catch (err) {
       setError(err.response?.data?.error || "Failed to submit rating");
     } finally {
@@ -160,7 +156,6 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
             <Divider sx={{ my: 2 }} />
 
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
-              {/* Creator Info & Contact */}
               <Box>
                 <Typography variant="caption" color="text.secondary" fontWeight="bold">CREATOR</Typography>
                 <Stack direction="row" alignItems="center" spacing={1} mt={0.5}>
@@ -188,7 +183,6 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
                 </Stack>
               </Box>
 
-              {/* Helper Info */}
               {isClaimed && task.helper && (
                 <Box>
                   <Typography variant="caption" color="text.secondary" fontWeight="bold">HELPER</Typography>
@@ -201,7 +195,6 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
                 </Box>
               )}
 
-              {/* Deadline */}
               {task.deadline && (
                 <Box>
                   <Typography variant="caption" color="text.secondary" fontWeight="bold">DEADLINE</Typography>
@@ -213,7 +206,6 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
               )}
             </Stack>
 
-            {/* ADDRESS DISPLAY */}
             {hasValidLocation && (
               <Box sx={{ mt: 2, p: 1.5, bgcolor: 'grey.50', borderRadius: 1, border: '1px solid #e0e0e0' }}>
                 <Stack direction="row" spacing={1} alignItems="flex-start">
@@ -227,7 +219,6 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
             )}
           </Box>
 
-          {/* MENU BUTTON */}
           {(isCreator || isAdmin) && (
             <IconButton size="small" onClick={handleMenuOpen}>
               <MoreVertIcon />
@@ -252,7 +243,6 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
           ) : null}
         </Box>
 
-        {/* MAP & DIRECTIONS */}
         {hasValidLocation && (
           <Box sx={{ mt: 2 }}>
             <Stack direction="row" spacing={1}>
@@ -281,7 +271,6 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
           </Box>
         )}
 
-        {/* RATINGS */}
         {isCompleted && isCreator && !isRated && (
           <Box sx={{ mt: 3, p: 2, bgcolor: 'warning.50', borderRadius: 2, border: '1px dashed #ffb74d' }}>
             <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Rate the Helper: {task.helper?.name}</Typography>
@@ -296,7 +285,6 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
           </Box>
         )}
 
-        {/* CHAT */}
         {(isClaimed || isCompleted) && (isCreator || isClaimer || isAdmin) && (
           <Box mt={3}><ChatBox taskId={task._id} /></Box>
         )}
