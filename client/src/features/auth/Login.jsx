@@ -115,6 +115,11 @@ export default function Login() {
               Create an account
             </Link>
           </p>
+            <p className="text-sm">
+            <Link to="/forgot-password" className="font-semibold text-blue-600 hover:text-blue-500 transition-colors">
+              Forgot your password?
+            </Link>
+          </p>
         </div>
       </div>
     </div>
