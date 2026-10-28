@@ -31,6 +31,9 @@ const UserSchema = new mongoose.Schema({
     enum: ['user', 'admin'],
     default: 'user'
   },
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
+  
   createdAt: {
     type: Date,
     default: Date.now
@@ -41,7 +44,6 @@ const UserSchema = new mongoose.Schema({
   }
 });
 
-// Encrypt password using bcrypt before saving
 UserSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
     return next();
@@ -50,13 +52,11 @@ UserSchema.pre('save', async function(next) {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Update the updatedAt field before saving
 UserSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });
 
-// Sign JWT and return
 UserSchema.methods.getSignedJwtToken = function() {
   return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
     expiresIn: '30d'
@@ -65,6 +65,20 @@ UserSchema.methods.getSignedJwtToken = function() {
 
 UserSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+UserSchema.methods.getResetPasswordToken = function() {
+  const crypto = require('crypto');
+  const resetToken = crypto.randomBytes(20).toString('hex');
+
+  this.resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+
+  return resetToken;
 };
 
 export default mongoose.model('User', UserSchema);
