@@ -1,11 +1,12 @@
 import Task from "../models/Task.js";
 import { getIO } from "../sockets/socket.js";
-import { sendEmail } from "../utils/sendEmail.js"; 
+import { sendEmail } from "../utils/sendEmail.js";
 
 // @desc    Get all tasks (with location filtering)
 // @route   GET /api/tasks
 export const getTasks = async (req, res) => {
   try {
+    // Show all non-completed tasks
     let query = { status: { $ne: "completed" } };
 
     if (req.query.longitude && req.query.latitude) {
@@ -15,7 +16,7 @@ export const getTasks = async (req, res) => {
             type: "Point",
             coordinates: [parseFloat(req.query.longitude), parseFloat(req.query.latitude)],
           },
-          $maxDistance: 10000, /
+          $maxDistance: 10000,
         },
       };
     }
@@ -74,7 +75,6 @@ export const updateTask = async (req, res) => {
 
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
 
-    // Only the task requester (or admin) can update the task
     const isOwner = task.requester.toString() === req.user.id;
     const isAdmin = req.user.role === 'admin';
 
@@ -129,7 +129,7 @@ export const claimTask = async (req, res) => {
       .populate("requester", "name email")
       .populate("helper", "name email");
 
-    //  SEND EMAIL TO REQUESTER
+    // SEND EMAIL TO REQUESTER
     if (populatedTask.requester?.email) {
       const emailHtml = `
         <h2 style="color: #111827; margin-top: 0; font-size: 20px;">Good news! Your task was claimed.</h2>
@@ -170,9 +170,8 @@ export const completeTask = async (req, res) => {
     task.status = "completed";
     const updatedTask = await task.save();
 
-    //  SEND EMAIL TO THE OTHER PARTY
+    // SEND EMAIL TO THE OTHER PARTY
     if (isHelper && task.requester?.email) {
-      // Helper marked it complete -> Notify Requester
       const emailHtml = `
         <h2 style="color: #111827; margin-top: 0; font-size: 20px;">Task Completed!</h2>
         <p>Hi ${task.requester.name},</p>
@@ -224,7 +223,6 @@ export const deleteTask = async (req, res) => {
 
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
 
-    // Check if the user is the owner OR an admin
     const isOwner = task.requester.toString() === req.user.id;
     const isAdmin = req.user.role === 'admin';
 
@@ -235,7 +233,7 @@ export const deleteTask = async (req, res) => {
       });
     }
 
-    await task.deleteOne(); 
+    await task.deleteOne();
 
     const io = getIO();
     io.emit("task-deleted", task._id);
