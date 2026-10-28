@@ -39,6 +39,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
     setIsRated(task?.isRated === true);
   }, [task?.isRated]);
 
+  // Bulletproof ID Checks
   const currentUserId = user?._id || user?.id;
   const requesterId = task?.requester?._id || task?.createdBy?._id || task?.requester || task?.createdBy;
   
@@ -48,9 +49,11 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
   
   const isCompleted = task?.status === "completed";
   const isClaimed = task?.status === "claimed";
+  const hasHelper = !!task?.helper; // Checks if a helper is actually assigned
   
   const canClaim = !isCreator && !isAdmin && task?.status === "open" && !isClaimer;
 
+  // Map Coordinates
   const lng = task?.location?.coordinates?.[0] || 0;
   const lat = task?.location?.coordinates?.[1] || 0;
   const hasValidLocation = lng !== 0 && lat !== 0;
@@ -185,7 +188,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
               </Box>
 
               {/* Helper Info & Rating Badge */}
-              {isClaimed && task.helper && (
+              {hasHelper && (
                 <Box>
                   <Typography variant="caption" color="text.secondary" fontWeight="bold">HELPER</Typography>
                   <Stack direction="row" alignItems="center" spacing={1} mt={0.5}>
@@ -196,7 +199,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
                       {task.helper.name}
                     </Typography>
                     
-                    {/* NEW: HELPER RATING BADGE */}
+                    {/* HELPER RATING BADGE */}
                     {task.helper.numReviews > 0 && (
                       <Chip 
                         icon={<StarIcon style={{ color: '#fbbf24', fontSize: 14 }} />}
@@ -287,7 +290,8 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
           </Box>
         )}
 
-        {isCompleted && isCreator && !isRated && (
+        {/* RATING BOX (Requires isCompleted, isCreator, !isRated, AND a Helper) */}
+        {isCompleted && isCreator && !isRated && hasHelper && (
           <Box sx={{ mt: 3, p: 2, bgcolor: 'warning.50', borderRadius: 2, border: '1px dashed #ffb74d' }}>
             <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Rate the Helper: {task.helper?.name}</Typography>
             <Stack direction="row" spacing={1} alignItems="center">
