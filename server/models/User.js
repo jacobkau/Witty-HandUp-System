@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto'; // <-- Fixed: Moved to the top for ES Modules
 
 const UserSchema = new mongoose.Schema({
   name: {
@@ -26,7 +27,7 @@ const UserSchema = new mongoose.Schema({
     minlength: 6,
     select: false
   },
-    phone: {
+  phone: {
     type: String,
     trim: true,
     default: ''
@@ -38,18 +39,17 @@ const UserSchema = new mongoose.Schema({
   },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
-  
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-    rating: {
+  rating: {
     type: Number,
     default: 0
   },
   numReviews: {
     type: Number,
     default: 0
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   },
   updatedAt: {
     type: Date,
@@ -81,7 +81,6 @@ UserSchema.methods.matchPassword = async function(enteredPassword) {
 };
 
 UserSchema.methods.getResetPasswordToken = function() {
-  const crypto = require('crypto');
   const resetToken = crypto.randomBytes(20).toString('hex');
 
   this.resetPasswordToken = crypto
