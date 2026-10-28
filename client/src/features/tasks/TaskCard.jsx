@@ -1,10 +1,11 @@
 import useAuth from "../auth/useAuth";
 import api from "../../lib/api";
+import ChatBox from "./ChatBox"; 
 import {
   Button, Card, CardContent, Typography, Chip, Stack, Box, IconButton, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, Avatar, Link, Badge, Divider
 } from "@mui/material";
 import {
-  CheckCircle as CheckCircleIcon, Pending as PendingIcon, AssignmentInd as AssignmentIndIcon, Event as EventIcon, MoreVert as MoreVertIcon, Delete as DeleteIcon, Edit as EditIcon, Email as EmailIcon, Phone as PhoneIcon, Done as DoneIcon, AdminPanelSettings as AdminIcon
+  CheckCircle as CheckCircleIcon, Pending as PendingIcon, AssignmentInd as AssignmentIndIcon, Event as EventIcon, MoreVert as MoreVertIcon, Delete as DeleteIcon, Edit as EditIcon, Email as EmailIcon, Phone as PhoneIcon, Done as DoneIcon
 } from "@mui/icons-material";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -214,6 +215,14 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
             </Button>
           ) : null}
         </Box>
+
+        {/* WOW FACTOR: Live Chat Section */}
+        {(isClaimed || isCompleted) && (isCreator || isClaimer || isAdmin) && (
+          <Box mt={3}>
+            <ChatBox taskId={task._id} />
+          </Box>
+        )}
+
       </CardContent>
 
       <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
