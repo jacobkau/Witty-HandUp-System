@@ -33,8 +33,9 @@ export default function EditTaskPage({ onUpdate }) {
   const handleSubmit = async (formData) => {
     try {
       const response = await api.put(`/tasks/${task._id}`, formData);
-      if (onUpdate) onUpdate(response.data.data);
       
+      // Update the UI state instantly if the parent passed the handler
+      if (onUpdate) onUpdate(response.data.data);
       setTimeout(() => {
         navigate(location.state?.from || '/tasks');
       }, 1500);
@@ -66,7 +67,8 @@ export default function EditTaskPage({ onUpdate }) {
     );
   }
 
-  const isOwner = user?._id === task.requester?._id;
+  const requesterId = task.requester?._id || task.requester || task.createdBy?._id || task.createdBy;
+  const isOwner = user?._id === requesterId;
   const isAdmin = user?.role === 'admin';
 
   if (!isOwner && !isAdmin) {
