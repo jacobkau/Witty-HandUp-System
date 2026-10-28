@@ -7,7 +7,8 @@ import TaskForm from '../features/tasks/TaskForm';
 import TaskList from '../features/tasks/TaskList';
 import EditTaskPage from '../features/tasks/EditTaskPage';
 import Profile from '../features/users/Profile';
-import Home from '../features/Home'; // <-- Import Home
+import Home from '../features/Home'; 
+import AdminDashboard from '../features/admin/AdminDashboard'; 
 import Navbar from './Navbar';
 
 export default function Layout() {
@@ -31,6 +32,7 @@ export default function Layout() {
                 <Route path="/tasks/new" element={<TaskForm />} />
                 <Route path="/tasks/edit/:taskId" element={<EditTaskPage />} />
                 <Route path="/users/:userId" element={<Profile />} />
+                <Route path="/admin" element={<AdminDashboard />} /> 
               </Route>
               
               {/* 404 Route */}
