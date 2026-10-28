@@ -79,12 +79,15 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
         setFormData({
           ...formData,
           location: {
             ...formData.location,
-            coordinates: [pos.coords.longitude, pos.coords.latitude],
-            address: `Detected Location (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`
+            coordinates: [lng, lat], // MongoDB requires [Longitude, Latitude]
+            address: `Detected Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`
           }
         });
         setIsDetectingLocation(false);
@@ -92,7 +95,8 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
       (err) => {
         setError(`Location detection failed: ${err.message}`);
         setIsDetectingLocation(false);
-      }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } // Forces GPS
     );
   };
 
@@ -163,7 +167,7 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
             
             <Stack direction="row" alignItems="center" justifyContent="space-between" mt={2} flexWrap="wrap" gap={2}>
               <Typography variant="caption" color="text.secondary">
-                GPS: {formData.location.coordinates[0].toFixed(4)}, {formData.location.coordinates[1].toFixed(4)}
+                GPS: {formData.location.coordinates[1]?.toFixed(4)}, {formData.location.coordinates[0]?.toFixed(4)}
               </Typography>
               
               <Button onClick={detectLocation} variant="outlined" size="small" startIcon={<LocationOnIcon />} disabled={isDetectingLocation}>
