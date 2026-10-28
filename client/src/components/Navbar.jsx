@@ -86,7 +86,7 @@ export default function Navbar() {
               {/* User Info & Logout */}
               <div className="flex items-center space-x-3 pl-4 border-l border-gray-200">
                 <span className="text-gray-700 text-sm font-medium hidden md:inline">
-                  Hello, {user.name} {user.role === 'admin' && '👑'}
+                  Hello, {user.name} {user.role === 'admin'}
                 </span>
                 <button
                   onClick={logout}
