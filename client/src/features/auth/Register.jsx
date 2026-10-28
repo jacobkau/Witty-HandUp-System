@@ -14,7 +14,12 @@ import {
   Paper,
   Divider
 } from '@mui/material';
-import { Visibility, VisibilityOff, LockOutlined } from '@mui/icons-material';
+import { 
+  Visibility, 
+  VisibilityOff, 
+  LockOutlined,
+  Phone as PhoneIcon 
+} from '@mui/icons-material';
 
 export default function Register() {
   const { register } = useAuth();
@@ -22,6 +27,7 @@ export default function Register() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '', // <-- Added phone to initial state
     password: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,10 +70,9 @@ export default function Register() {
           alignItems: 'center',
           padding: 4,
           borderRadius: 2,
-          borderTop: '4px solid #2563eb' // Solid blue accent matching your email template
+          borderTop: '4px solid #2563eb'
         }}
       >
-        {/* Professional Icon Header instead of a plain text header */}
         <Box sx={{ 
           backgroundColor: '#eff6ff', 
           p: 1.5, 
@@ -118,6 +123,28 @@ export default function Register() {
             disabled={isSubmitting}
             required
           />
+
+          {/* NEW: Phone Number Field */}
+          <TextField
+            label="Phone Number"
+            type="tel"
+            variant="outlined"
+            fullWidth
+            margin="normal"
+            size="small"
+            value={formData.phone}
+            onChange={handleInputChange('phone')}
+            disabled={isSubmitting}
+            placeholder="+254 700 000000"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <PhoneIcon color="action" fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
+
           <TextField
             label="Password"
             type={showPassword ? 'text' : 'password'}
@@ -151,11 +178,11 @@ export default function Register() {
             variant="contained" 
             fullWidth
             disabled={isSubmitting}
-            disableElevation // Removes the 3D shadow for a flat, modern look
+            disableElevation 
             sx={{ 
               mt: 3, 
               mb: 2,
-              backgroundColor: '#2563eb', // Solid blue
+              backgroundColor: '#2563eb', 
               '&:hover': {
                 backgroundColor: '#1d4ed8', 
               },
