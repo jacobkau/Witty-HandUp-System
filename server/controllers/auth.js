@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import User from '../models/User.js';
+import Task from '../models/Task.js'; // <-- CRITICAL FIX: Missing Import Added
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { sendEmail } from '../utils/sendEmail.js'; 
@@ -7,7 +8,7 @@ import { sendEmail } from '../utils/sendEmail.js';
 // @desc    Register user
 export const register = async (req, res) => {
   try {
-    const { name, email, password, phone } = req.body; // <-- Added phone
+    const { name, email, password, phone } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -42,7 +43,7 @@ The Witty HandUp System Team`;
         id: user._id, 
         name: user.name, 
         email: user.email, 
-        phone: user.phone, // <-- Return phone
+        phone: user.phone,
         role: user.role 
       }
     });
@@ -83,7 +84,7 @@ export const login = async (req, res) => {
         name: user.name,
         role: user.role, 
         email: user.email,
-        phone: user.phone, // <-- Return phone
+        phone: user.phone,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -104,12 +105,10 @@ export const updateProfile = async (req, res) => {
       return res.status(404).json({ success: false, error: 'User not found' });
     }
 
-    // Update text fields if provided
     if (req.body.name) user.name = req.body.name;
     if (req.body.email) user.email = req.body.email;
-    if (req.body.phone !== undefined) user.phone = req.body.phone; // <-- Update phone
+    if (req.body.phone !== undefined) user.phone = req.body.phone;
 
-    // If password is provided, update it (the pre-save hook will hash it)
     if (req.body.password) {
       if (req.body.password.length < 6) {
         return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
@@ -125,7 +124,7 @@ export const updateProfile = async (req, res) => {
         id: updatedUser._id,
         name: updatedUser.name,
         email: updatedUser.email,
-        phone: updatedUser.phone, 
+        phone: updatedUser.phone,
         role: updatedUser.role,
         createdAt: updatedUser.createdAt,
         updatedAt: updatedUser.updatedAt
@@ -206,18 +205,21 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+// @desc    Get current user
+// @route   GET /api/auth/me
 export const getMe = async (req, res) => {
   try {
     if (!req.user || !req.user._id) {
       return res.status(401).json({ success: false, error: 'Not authorized' });
     }
 
+    // Fetch reviews (Tasks where this user was the helper and it was rated)
     const reviews = await Task.find({
       helper: req.user._id,
       isRated: true
     })
     .populate('requester', 'name')
-    .select('title requester rating createdAt updatedAt')
+    .select('title requester ratingValue createdAt updatedAt')
     .sort({ updatedAt: -1 });
 
     res.status(200).json({
@@ -236,6 +238,9 @@ export const getMe = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(400).json({ success: false, error: 'Failed to fetch profile: ' + err.message });
+    res.status(400).json({
+      success: false,
+      error: 'Failed to fetch profile: ' + err.message,
+    });
   }
 };
