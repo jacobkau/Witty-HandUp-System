@@ -252,6 +252,43 @@ export const getMyTasks = async (req, res) => {
   }
 };
 
+// Add to the bottom of controllers/tasks.js
+// @desc    Rate a completed task
+// @route   POST /api/tasks/:id/rate
+export const rateTask = async (req, res) => {
+  try {
+    const { rating } = req.body; // Expecting a number 1-5
+    const task = await Task.findById(req.params.id);
+
+    if (!task) return res.status(404).json({ success: false, error: "Task not found" });
+    if (task.status !== "completed") return res.status(400).json({ success: false, error: "Task must be completed first" });
+    if (task.isRated) return res.status(400).json({ success: false, error: "Task already rated" });
+    
+    // Only the Requester can rate the Helper
+    if (task.requester.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, error: "Only the task creator can leave a rating" });
+    }
+
+    const helper = await User.findById(task.helper);
+    if (!helper) return res.status(404).json({ success: false, error: "Helper not found" });
+
+    // Calculate new average
+    const newNumReviews = helper.numReviews + 1;
+    const newRating = ((helper.rating * helper.numReviews) + rating) / newNumReviews;
+
+    helper.rating = newRating;
+    helper.numReviews = newNumReviews;
+    await helper.save();
+
+    task.isRated = true;
+    await task.save();
+
+    res.status(200).json({ success: true, message: "Rating submitted successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 // @desc    Delete a task (Owner or Admin)
 // @route   DELETE /api/tasks/:id
 export const deleteTask = async (req, res) => {
