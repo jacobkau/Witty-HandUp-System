@@ -67,6 +67,7 @@ export const login = async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
+        role: user.role, 
         email: user.email,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
@@ -95,6 +96,7 @@ export const getMe = async (req, res) => {
         id: req.user._id,
         name: req.user.name,
         email: req.user.email,
+        role: user.role, 
         createdAt: req.user.createdAt,
         updatedAt: req.user.updatedAt
       },
