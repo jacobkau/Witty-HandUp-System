@@ -14,10 +14,10 @@ export default function ForgotPassword() {
 
     try {
       await api.post('/auth/forgotpassword', { email });
-      setStatus({ type: 'success', message: 'Email sent! Please check your inbox.' });
+      setStatus({ type: 'success', message: 'Email sent! Please check your inbox for the reset link.' });
       setEmail('');
     } catch (err) {
-      setStatus({ type: 'error', message: err.response?.data?.error || 'Failed to send email' });
+      setStatus({ type: 'error', message: err.response?.data?.error || 'Failed to send email. Please try again.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -43,7 +43,7 @@ export default function ForgotPassword() {
             <input
               type="email"
               required
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isSubmitting}
@@ -52,7 +52,7 @@ export default function ForgotPassword() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+            className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
           >
             {isSubmitting ? 'Sending...' : 'Send Reset Link'}
           </button>
