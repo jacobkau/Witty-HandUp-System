@@ -1,11 +1,23 @@
 import useAuth from "../auth/useAuth";
 import api from "../../lib/api";
-import ChatBox from "./ChatBox"; 
+import ChatBox from "./ChatBox";
 import {
   Button, Card, CardContent, Typography, Chip, Stack, Box, IconButton, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, Avatar, Link, Badge, Divider
 } from "@mui/material";
 import {
-  CheckCircle as CheckCircleIcon, Pending as PendingIcon, AssignmentInd as AssignmentIndIcon, Event as EventIcon, MoreVert as MoreVertIcon, Delete as DeleteIcon, Edit as EditIcon, Email as EmailIcon, Phone as PhoneIcon, Done as DoneIcon
+  CheckCircle as CheckCircleIcon, 
+  Pending as PendingIcon, 
+  AssignmentInd as AssignmentIndIcon, 
+  Event as EventIcon, 
+  MoreVert as MoreVertIcon, 
+  Delete as DeleteIcon, 
+  Edit as EditIcon, 
+  Email as EmailIcon, 
+  Phone as PhoneIcon, 
+  Done as DoneIcon,
+  Map as MapIcon,
+  Star as StarIcon,
+  StarBorder as StarBorderIcon
 } from "@mui/icons-material";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +29,11 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // New States for Map and Ratings
+  const [showMap, setShowMap] = useState(false);
+  const [ratingValue, setRatingValue] = useState(0);
+  const [isRated, setIsRated] = useState(task?.isRated || false);
 
   // User identification
   const requesterId = task?.requester?._id || task?.createdBy?._id || task?.createdBy;
@@ -76,6 +93,19 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
       if (onUpdate) onUpdate(response.data.data);
     } catch (err) {
       setError(err.response?.data?.error || "Failed to complete task");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRateTask = async () => {
+    if (ratingValue < 1 || ratingValue > 5) return;
+    setIsProcessing(true);
+    try {
+      await api.post(`/tasks/${task._id}/rate`, { rating: ratingValue });
+      setIsRated(true);
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to submit rating");
     } finally {
       setIsProcessing(false);
     }
@@ -216,7 +246,73 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
           ) : null}
         </Box>
 
-        {/* WOW FACTOR: Live Chat Section */}
+        {/* WOW FACTOR 1: Interactive Map & Directions */}
+        <Box sx={{ mt: 2, mb: 2 }}>
+          <Button 
+            variant="outlined" 
+            size="small" 
+            startIcon={<MapIcon />}
+            onClick={() => setShowMap(!showMap)}
+          >
+            {showMap ? "Hide Map" : "View Location & Directions"}
+          </Button>
+
+          {showMap && task.location?.coordinates && (
+            <Box sx={{ mt: 2, borderRadius: 2, overflow: 'hidden', border: '1px solid #e0e0e0' }}>
+              <iframe
+                width="100%"
+                height="250"
+                frameBorder="0"
+                scrolling="no"
+                marginHeight="0"
+                marginWidth="0"
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${task.location.coordinates[0] - 0.01}%2C${task.location.coordinates[1] - 0.01}%2C${task.location.coordinates[0] + 0.01}%2C${task.location.coordinates[1] + 0.01}&layer=mapnik&marker=${task.location.coordinates[1]}%2C${task.location.coordinates[0]}`}
+                style={{ border: 0 }}
+                allowFullScreen
+                title="Task Location"
+              ></iframe>
+              
+              <Box sx={{ p: 1, bgcolor: 'grey.50', textAlign: 'center' }}>
+                <Link 
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${task.location.coordinates[1]},${task.location.coordinates[0]}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  underline="hover"
+                  sx={{ fontSize: '0.875rem', fontWeight: 'bold' }}
+                >
+                  Get Directions via Google Maps
+                </Link>
+              </Box>
+            </Box>
+          )}
+        </Box>
+
+        {/* WOW FACTOR 2: User Ratings (Only for Creator on Completed Tasks) */}
+        {isCompleted && isCreator && !isRated && (
+          <Box sx={{ mt: 3, p: 2, bgcolor: 'warning.50', borderRadius: 2, border: '1px dashed #ffb74d' }}>
+            <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+              Rate the Helper: {task.helper?.name}
+            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <IconButton key={star} onClick={() => setRatingValue(star)} color={ratingValue >= star ? "warning" : "default"}>
+                  {ratingValue >= star ? <StarIcon /> : <StarBorderIcon />}
+                </IconButton>
+              ))}
+              <Button variant="contained" color="warning" onClick={handleRateTask} disabled={ratingValue === 0 || isProcessing} sx={{ ml: 2 }} disableElevation>
+                {isProcessing ? "Submitting..." : "Submit"}
+              </Button>
+            </Stack>
+          </Box>
+        )}
+
+        {isCompleted && isRated && (
+          <Typography variant="body2" color="success.main" sx={{ mt: 2, fontWeight: 'bold' }}>
+            ✓ You have rated this task.
+          </Typography>
+        )}
+
+        {/* WOW FACTOR 3: Live Chat Section */}
         {(isClaimed || isCompleted) && (isCreator || isClaimer || isAdmin) && (
           <Box mt={3}>
             <ChatBox taskId={task._id} />
