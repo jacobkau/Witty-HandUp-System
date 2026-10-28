@@ -20,7 +20,7 @@ import {
   Phone as PhoneIcon,
   Directions as DirectionsIcon
 } from "@mui/icons-material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
@@ -34,6 +34,11 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
   const [showMap, setShowMap] = useState(false);
   const [ratingValue, setRatingValue] = useState(0);
   const [isRated, setIsRated] = useState(task?.isRated || false);
+
+  // Keep local state in sync if task prop changes (e.g., after being rated in another tab)
+  useEffect(() => {
+    setIsRated(task?.isRated || false);
+  }, [task?.isRated]);
 
   // BULLETPROOF ID CHECKS
   const currentUserId = user?._id || user?.id;
@@ -111,6 +116,8 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
     try {
       await api.post(`/tasks/${task._id}/rate`, { rating: ratingValue });
       setIsRated(true);
+      // Optional: Update parent state to reflect rating
+      if (onUpdate) onUpdate({ ...task, isRated: true, ratingValue });
     } catch (err) {
       setError(err.response?.data?.error || "Failed to submit rating");
     } finally {
@@ -220,7 +227,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
             )}
           </Box>
 
-          {/* THIS IS THE MENU BUTTON. It will now show up correctly. */}
+          {/* MENU BUTTON */}
           {(isCreator || isAdmin) && (
             <IconButton size="small" onClick={handleMenuOpen}>
               <MoreVertIcon />
