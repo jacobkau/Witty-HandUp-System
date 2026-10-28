@@ -125,7 +125,7 @@ export const updateProfile = async (req, res) => {
         id: updatedUser._id,
         name: updatedUser.name,
         email: updatedUser.email,
-        phone: updatedUser.phone, // <-- Return phone
+        phone: updatedUser.phone, 
         role: updatedUser.role,
         createdAt: updatedUser.createdAt,
         updatedAt: updatedUser.updatedAt
@@ -206,16 +206,19 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-// @desc    Get current user
-// @route   GET /api/auth/me
 export const getMe = async (req, res) => {
   try {
     if (!req.user || !req.user._id) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Not authorized' 
-      });
+      return res.status(401).json({ success: false, error: 'Not authorized' });
     }
+
+    const reviews = await Task.find({
+      helper: req.user._id,
+      isRated: true
+    })
+    .populate('requester', 'name')
+    .select('title requester rating createdAt updatedAt')
+    .sort({ updatedAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -223,16 +226,16 @@ export const getMe = async (req, res) => {
         id: req.user._id,
         name: req.user.name,
         email: req.user.email,
-        phone: req.user.phone, // <-- Return phone
-        role: req.user.role, 
+        phone: req.user.phone,
+        role: req.user.role,
+        rating: req.user.rating || 0,
+        numReviews: req.user.numReviews || 0,
         createdAt: req.user.createdAt,
-        updatedAt: req.user.updatedAt
+        updatedAt: req.user.updatedAt,
+        reviews: reviews 
       },
     });
   } catch (err) {
-    res.status(400).json({
-      success: false,
-      error: 'Failed to fetch profile: ' + err.message,
-    });
+    res.status(400).json({ success: false, error: 'Failed to fetch profile: ' + err.message });
   }
 };
