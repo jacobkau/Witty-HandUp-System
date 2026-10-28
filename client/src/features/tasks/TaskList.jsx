@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../lib/api";
 import TaskCard from "./TaskCard";
+import useAuth from "../auth/useAuth";
 import {
   Box,
   Typography,
@@ -8,25 +9,46 @@ import {
   Alert,
   Tabs,
   Tab,
+  Pagination,
+  Stack,
+  Paper,
 } from "@mui/material";
 import { useLocation } from "react-router-dom";
 
 export default function TaskList() {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [tabValue, setTabValue] = useState(0);
   const location = useLocation();
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   useEffect(() => {
     loadTasks();
-  }, [location.key]);
+  }, [location.key, user, tabValue, page]);
 
   const loadTasks = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/tasks");
+      
+      // Determine status based on active tab
+      let statusParam = "";
+      if (tabValue === 0) statusParam = "open";
+      if (tabValue === 1) statusParam = "claimed";
+      if (tabValue === 2) statusParam = "completed";
+
+      // Build endpoint
+      let endpoint = `/tasks?page=${page}&limit=10&status=${statusParam}`;
+      if (user?.role === 'admin') endpoint += "&admin=true";
+
+      const res = await api.get(endpoint);
+      
       setTasks(res.data.data || []);
+      setTotalPages(res.data.totalPages || 1);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.error || "Failed to load tasks");
@@ -37,15 +59,10 @@ export default function TaskList() {
   };
 
   const handleTaskUpdated = (updatedTask) => {
-    console.log("Updated task:", updatedTask);
     setTasks((prev) =>
       prev.map((t) =>
         t._id === updatedTask._id
-          ? {
-              ...updatedTask,
-              // Ensure helper data exists
-              helper: updatedTask.helper || t.helper,
-            }
+          ? { ...updatedTask, helper: updatedTask.helper || t.helper }
           : t
       )
     );
@@ -54,66 +71,78 @@ export default function TaskList() {
   const handleTaskDeleted = (taskId) => {
     setTasks((prev) => prev.filter((task) => task._id !== taskId));
   };
-  let filteredTasks = [];
 
-  if (tabValue === 0) {
-    filteredTasks = tasks.filter((task) => task.status === "open");
-  } else if (tabValue === 1) {
-    filteredTasks = tasks.filter((task) => task.status === "claimed");
-  } else {
-    filteredTasks = tasks.filter((task) => task.status === "completed");
-  }
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+    setPage(1); 
+  };
 
-  if (loading) {
+  if (loading && tasks.length === 0) {
     return (
-      <Box display="flex" justifyContent="center" p={4}>
+      <Box display="flex" justifyContent="center" p={6}>
         <CircularProgress />
       </Box>
     );
   }
 
-  if (error) {
-    return (
-      <Box p={2}>
-        <Alert severity="error">{error}</Alert>
-      </Box>
-    );
-  }
-
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Available Tasks
+    <Box sx={{ maxWidth: 800, mx: "auto", p: { xs: 2, md: 3 } }}>
+      <Typography variant="h4" fontWeight="bold" color="text.primary" gutterBottom>
+        {user?.role === 'admin' ? 'All System Tasks (Admin)' : 'Task Dashboard'}
       </Typography>
 
-      <Tabs
-        value={tabValue}
-        onChange={(e, newValue) => setTabValue(newValue)}
-        sx={{ mb: 3 }}
-      >
-        <Tab label="Open Tasks" />
-        <Tab label="Claimed Tasks" />
-        <Tab label="Complete Tasks" />
-      </Tabs>
+      <Paper elevation={0} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs
+          value={tabValue}
+          onChange={handleTabChange}
+          variant="fullWidth"
+          textColor="primary"
+          indicatorColor="primary"
+        >
+          <Tab label="Open Tasks" />
+          <Tab label="Claimed Tasks" />
+          <Tab label="Completed" />
+        </Tabs>
+      </Paper>
 
-      {filteredTasks.length > 0 ? (
-        filteredTasks.map((task) => (
-          <TaskCard
-            key={task._id}
-            task={task}
-            onClaim={handleTaskUpdated}
-            onUpdate={handleTaskUpdated}
-            onDelete={handleTaskDeleted}
-          />
-        ))
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+      {tasks.length > 0 ? (
+        <Stack spacing={2}>
+          {tasks.map((task) => (
+            <TaskCard
+              key={task._id}
+              task={task}
+              onClaim={handleTaskUpdated}
+              onUpdate={handleTaskUpdated}
+              onDelete={handleTaskDeleted}
+            />
+          ))}
+        </Stack>
       ) : (
-        <Typography variant="body1" color="text.secondary">
-          {tabValue === 0
-            ? "No open tasks available"
-            : tabValue === 1
-            ? "No claimed tasks available"
-            : "No completed at the moment in the system"}
-        </Typography>
+        <Box textAlign="center" py={8}>
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No tasks found
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {tabValue === 0 ? "There are currently no open tasks available." : 
+             tabValue === 1 ? "No tasks have been claimed yet." : 
+             "No completed tasks to show."}
+          </Typography>
+        </Box>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Box display="flex" justifyContent="center" mt={4}>
+          <Pagination 
+            count={totalPages} 
+            page={page} 
+            onChange={(e, value) => setPage(value)} 
+            color="primary" 
+            size="large"
+          />
+        </Box>
       )}
     </Box>
   );
