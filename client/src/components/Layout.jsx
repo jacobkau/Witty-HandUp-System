@@ -8,6 +8,8 @@ import TaskList from '../features/tasks/TaskList';
 import EditTaskPage from '../features/tasks/EditTaskPage';
 import Profile from '../features/users/Profile';
 import Home from '../features/auth/Home'; 
+import ForgotPassword from '../features/auth/ForgotPassword';
+import ResetPassword from '../features/auth/ResetPassword';
 import AdminDashboard from '../features/admin/AdminDashboard'; 
 import Navbar from './Navbar';
 
@@ -16,7 +18,6 @@ export default function Layout() {
     <AuthProvider>
       <BrowserRouter>
         <div className="min-h-screen bg-gray-50 flex flex-col">
-          {/* The Navbar will handle its own logic to show/hide links based on the current URL */}
           <Navbar />
           
           <main className="flex-grow container mx-auto px-4 py-8">
@@ -25,6 +26,8 @@ export default function Layout() {
               <Route path="/" element={<Home />} /> 
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
               
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>
