@@ -4,9 +4,10 @@ import useAuth from '../auth/useAuth';
 import api from '../../lib/api';
 import { 
   TextField, Button, Typography, Select, MenuItem, InputLabel, FormControl,
-  Snackbar, Alert, Box, Stack, Paper
+  Snackbar, Alert, Box, Stack, Paper, InputAdornment, CircularProgress
 } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import SearchIcon from '@mui/icons-material/Search';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -19,6 +20,10 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   
+  // Address Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -43,9 +48,8 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
     e.preventDefault();
     setError(null);
 
-    // Prevent saving tasks with 0,0 coordinates
     if (formData.location.coordinates[0] === 0 && formData.location.coordinates[1] === 0) {
-      setError('Please detect your location or provide valid coordinates before saving.');
+      setError('Please detect your location or search for an address before saving.');
       return;
     }
 
@@ -86,7 +90,6 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        // POS gives us LATITUDE first, then LONGITUDE
         const latitude = pos.coords.latitude;
         const longitude = pos.coords.longitude;
 
@@ -94,7 +97,6 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
           ...formData,
           location: {
             ...formData.location,
-            // MongoDB GeoJSON requires LONGITUDE first, then LATITUDE
             coordinates: [longitude, latitude], 
             address: `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
           }
@@ -102,11 +104,50 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
         setIsDetectingLocation(false);
       },
       (err) => {
-        setError(`Location detection failed: ${err.message}. Please ensure GPS is enabled.`);
+        setError(`Location detection failed: ${err.message}`);
         setIsDetectingLocation(false);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
+  };
+
+  // NEW: Search Address using OpenStreetMap Nominatim API
+  const handleAddressSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    setIsSearching(true);
+    setError(null);
+
+    try {
+      // Free API call to OpenStreetMap
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`
+      );
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const result = data[0];
+        // Nominatim returns LAT first, then LON. We flip for MongoDB.
+        const lat = parseFloat(result.lat);
+        const lng = parseFloat(result.lon);
+
+        setFormData({
+          ...formData,
+          location: {
+            type: 'Point',
+            coordinates: [lng, lat], // Flipped
+            address: result.display_name.split(',')[0] // Use the first part of the address
+          }
+        });
+      } else {
+        setError('Address not found. Please try a more specific search.');
+      }
+    } catch (err) {
+      setError('Failed to search address. Check your internet connection.');
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (
@@ -117,24 +158,9 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
       
       <form onSubmit={handleSubmit}>
         <Stack spacing={3} mt={2}>
-          <TextField
-            label="Task Title"
-            fullWidth
-            required
-            value={formData.title}
-            onChange={(e) => setFormData({...formData, title: e.target.value})}
-            inputProps={{ maxLength: 100 }}
-          />
+          <TextField label="Task Title" fullWidth required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} inputProps={{ maxLength: 100 }} />
           
-          <TextField
-            label="Description"
-            fullWidth
-            multiline
-            rows={4}
-            required
-            value={formData.description}
-            onChange={(e) => setFormData({...formData, description: e.target.value})}
-          />
+          <TextField label="Description" fullWidth multiline rows={4} required value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
             <FormControl fullWidth>
@@ -149,13 +175,7 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
             </FormControl>
 
             <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <DatePicker
-                label="Deadline (optional)"
-                value={formData.deadline}
-                onChange={(newValue) => setFormData({...formData, deadline: newValue})}
-                slotProps={{ textField: { fullWidth: true } }}
-                minDate={new Date()}
-              />
+              <DatePicker label="Deadline (optional)" value={formData.deadline} onChange={(newValue) => setFormData({...formData, deadline: newValue})} slotProps={{ textField: { fullWidth: true } }} minDate={new Date()} />
             </LocalizationProvider>
           </Stack>
 
@@ -164,47 +184,53 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
               <LocationOnIcon sx={{ mr: 1, color: 'primary.main' }} /> Task Location
             </Typography>
             
-            <TextField
-              label="Address / Area Name"
-              fullWidth
-              margin="normal"
-              size="small"
-              value={formData.location.address || ''}
-              onChange={(e) => setFormData({...formData, location: { ...formData.location, address: e.target.value }})}
-            />
-            
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mt={2} flexWrap="wrap" gap={2}>
+            {/* Address / Search Box */}
+            <Box component="form" onSubmit={handleAddressSearch} sx={{ display: 'flex', gap: 1, mb: 2 }}>
+              <TextField
+                label="Search Address (e.g., Westlands, Nairobi)"
+                fullWidth
+                size="small"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment>
+                }}
+              />
+              <Button type="submit" variant="contained" color="primary" disabled={isSearching || !searchQuery.trim()} disableElevation sx={{ minWidth: 100 }}>
+                {isSearching ? <CircularProgress size={24} color="inherit" /> : 'Search'}
+              </Button>
+            </Box>
+
+            <Typography variant="caption" color="text.secondary" display="block" mb={1}>OR</Typography>
+
+            {/* GPS Detection */}
+            <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
               <Typography variant="caption" color="text.secondary">
-                {/* Display clearly indicating which is which */}
                 Lat: {formData.location.coordinates[1]?.toFixed(4)} | Lng: {formData.location.coordinates[0]?.toFixed(4)}
               </Typography>
               
-              <Button onClick={detectLocation} variant="contained" color="secondary" size="small" startIcon={<LocationOnIcon />} disabled={isDetectingLocation} disableElevation>
+              <Button onClick={detectLocation} variant="outlined" color="secondary" size="small" startIcon={<LocationOnIcon />} disabled={isDetectingLocation}>
                 {isDetectingLocation ? 'Detecting...' : 'Detect My Location'}
               </Button>
             </Stack>
+            
+            {/* Show the selected address below */}
+            {formData.location.address && (
+               <Typography variant="body2" sx={{ mt: 2, p: 1, bgcolor: 'white', borderRadius: 1, border: '1px solid #e0e0e0' }}>
+                 <strong>Selected Location:</strong> {formData.location.address}
+               </Typography>
+            )}
           </Box>
 
           <Stack direction="row" spacing={2} pt={2}>
-            {onCancel && (
-              <Button variant="outlined" color="inherit" size="large" fullWidth onClick={onCancel} disabled={isSubmitting}>
-                Cancel
-              </Button>
-            )}
-            <Button type="submit" variant="contained" size="large" fullWidth disabled={isSubmitting} disableElevation>
-              {isSubmitting ? (isEdit ? 'Saving...' : 'Posting...') : (isEdit ? 'Save Changes' : 'Post Task')}
-            </Button>
+            {onCancel && <Button variant="outlined" color="inherit" size="large" fullWidth onClick={onCancel} disabled={isSubmitting}>Cancel</Button>}
+            <Button type="submit" variant="contained" size="large" fullWidth disabled={isSubmitting} disableElevation>{isSubmitting ? (isEdit ? 'Saving...' : 'Posting...') : (isEdit ? 'Save Changes' : 'Post Task')}</Button>
           </Stack>
         </Stack>
       </form>
 
-      <Snackbar open={success} autoHideDuration={6000} onClose={() => setSuccess(false)}>
-        <Alert severity="success" variant="filled">{isEdit ? 'Task updated!' : 'Task created!'}</Alert>
-      </Snackbar>
-
-      <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError(null)}>
-        <Alert severity="error" variant="filled">{error}</Alert>
-      </Snackbar>
+      <Snackbar open={success} autoHideDuration={6000} onClose={() => setSuccess(false)}><Alert severity="success" variant="filled">{isEdit ? 'Task updated!' : 'Task created!'}</Alert></Snackbar>
+      <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError(null)}><Alert severity="error" variant="filled">{error}</Alert></Snackbar>
     </Paper>
   );
 }
