@@ -20,7 +20,6 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   
-  // Address Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
@@ -41,6 +40,9 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
         location: initialValues.location || { type: 'Point', coordinates: [0, 0], address: '' },
         deadline: initialValues.deadline || null
       });
+      if (initialValues.location?.address) {
+        setSearchQuery(initialValues.location.address);
+      }
     }
   }, [initialValues]);
 
@@ -98,9 +100,10 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
           location: {
             ...formData.location,
             coordinates: [longitude, latitude], 
-            address: `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+            address: `GPS Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
           }
         });
+        setSearchQuery(''); 
         setIsDetectingLocation(false);
       },
       (err) => {
@@ -111,7 +114,6 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
     );
   };
 
-  // NEW: Search Address using OpenStreetMap Nominatim API
   const handleAddressSearch = async (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -120,7 +122,6 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
     setError(null);
 
     try {
-      // Free API call to OpenStreetMap
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`
       );
@@ -128,7 +129,6 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
 
       if (data && data.length > 0) {
         const result = data[0];
-        // Nominatim returns LAT first, then LON. We flip for MongoDB.
         const lat = parseFloat(result.lat);
         const lng = parseFloat(result.lon);
 
@@ -136,15 +136,15 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
           ...formData,
           location: {
             type: 'Point',
-            coordinates: [lng, lat], // Flipped
-            address: result.display_name.split(',')[0] // Use the first part of the address
+            coordinates: [lng, lat],
+            address: result.display_name // Keep full address
           }
         });
       } else {
-        setError('Address not found. Please try a more specific search.');
+        setError('Address not found. Please try a more specific search (e.g., "Westlands, Nairobi").');
       }
     } catch (err) {
-      setError('Failed to search address. Check your internet connection.');
+      setError('Failed to search address. Please check your internet connection.');
     } finally {
       setIsSearching(false);
     }
@@ -184,7 +184,6 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
               <LocationOnIcon sx={{ mr: 1, color: 'primary.main' }} /> Task Location
             </Typography>
             
-            {/* Address / Search Box */}
             <Box component="form" onSubmit={handleAddressSearch} sx={{ display: 'flex', gap: 1, mb: 2 }}>
               <TextField
                 label="Search Address (e.g., Westlands, Nairobi)"
@@ -203,7 +202,6 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
 
             <Typography variant="caption" color="text.secondary" display="block" mb={1}>OR</Typography>
 
-            {/* GPS Detection */}
             <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
               <Typography variant="caption" color="text.secondary">
                 Lat: {formData.location.coordinates[1]?.toFixed(4)} | Lng: {formData.location.coordinates[0]?.toFixed(4)}
@@ -214,11 +212,11 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
               </Button>
             </Stack>
             
-            {/* Show the selected address below */}
             {formData.location.address && (
-               <Typography variant="body2" sx={{ mt: 2, p: 1, bgcolor: 'white', borderRadius: 1, border: '1px solid #e0e0e0' }}>
-                 <strong>Selected Location:</strong> {formData.location.address}
-               </Typography>
+               <Box sx={{ mt: 2, p: 1.5, bgcolor: 'white', borderRadius: 1, border: '1px solid #e0e0e0' }}>
+                 <Typography variant="caption" color="text.secondary" display="block">SELECTED ADDRESS</Typography>
+                 <Typography variant="body2" fontWeight="medium">{formData.location.address}</Typography>
+               </Box>
             )}
           </Box>
 
