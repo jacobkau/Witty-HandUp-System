@@ -6,13 +6,14 @@ import { toast } from 'react-toastify';
 
 import { 
   Box, Paper, Typography, CircularProgress, Button, Divider, 
-  Avatar, Chip, Stack, TextField, Alert, IconButton, InputAdornment 
+  Avatar, Chip, Stack, TextField, IconButton, InputAdornment 
 } from '@mui/material';
 import { 
   Person as PersonIcon, Email as EmailIcon, CalendarToday as CalendarIcon,
   AdminPanelSettings as AdminIcon, ArrowBack as ArrowBackIcon, 
   Edit as EditIcon, Save as SaveIcon, Cancel as CancelIcon,
-  Visibility, VisibilityOff, Phone as PhoneIcon
+  Visibility, VisibilityOff, Phone as PhoneIcon,
+  Star as StarIcon, StarBorder as StarBorderIcon
 } from '@mui/icons-material';
 
 export default function Profile() {
@@ -21,7 +22,6 @@ export default function Profile() {
   const [isLoading, setIsLoading] = useState(!authUser);
   const [error, setError] = useState('');
   
-  // Edit Mode State
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '' });
@@ -67,7 +67,7 @@ export default function Profile() {
     setIsSaving(true);
     try {
       const res = await api.put('/auth/me', formData);
-      setUser(res.data.user);
+      setUser({ ...user, ...res.data.user }); // Keep existing reviews
       updateUser(res.data.user); 
       setIsEditing(false);
       toast.success('Profile updated successfully!');
@@ -85,6 +85,20 @@ export default function Profile() {
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  };
+
+  // Helper to render stars based on a rating number
+  const renderStars = (rating) => {
+    const stars = [];
+    const roundedRating = Math.round(rating);
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        i <= roundedRating ? 
+        <StarIcon key={i} fontSize="small" sx={{ color: '#fbbf24' }} /> : 
+        <StarBorderIcon key={i} fontSize="small" sx={{ color: '#fbbf24' }} />
+      );
+    }
+    return <Stack direction="row" spacing={0.5}>{stars}</Stack>;
   };
 
   return (
@@ -109,6 +123,14 @@ export default function Profile() {
                 )}
               </Stack>
               <Typography variant="body1" sx={{ opacity: 0.8, mt: 0.5 }}>Witty HandUp Member</Typography>
+              
+              {/* AVERAGE RATING DISPLAY */}
+              <Stack direction="row" alignItems="center" spacing={1} mt={1}>
+                {renderStars(user.rating || 0)}
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  {user.rating ? user.rating.toFixed(1) : '0.0'} ({user.numReviews || 0} reviews)
+                </Typography>
+              </Stack>
             </Box>
           </Box>
 
@@ -129,40 +151,15 @@ export default function Profile() {
                 <TextField label="Full Name" fullWidth value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
                 <TextField label="Email Address" type="email" fullWidth value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
                 
-                {/* NEW: Phone Number Field */}
                 <TextField 
-                  label="Phone Number (for Task Contact)" 
-                  type="tel" 
-                  fullWidth 
-                  value={formData.phone} 
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
-                  placeholder="+254 700 000000"
+                  label="Phone Number (for Task Contact)" type="tel" fullWidth value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+254 700 000000"
                   helperText="Helpers will use this to call you if needed"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <PhoneIcon color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><PhoneIcon color="action" /></InputAdornment> }}
                 />
 
                 <TextField 
-                  label="New Password (leave blank to keep current)" 
-                  type={showPassword ? 'text' : 'password'} 
-                  fullWidth 
-                  value={formData.password} 
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
-                  helperText="Must be at least 6 characters"
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
+                  label="New Password (leave blank to keep current)" type={showPassword ? 'text' : 'password'} fullWidth value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} helperText="Must be at least 6 characters"
+                  InputProps={{ endAdornment: <InputAdornment position="end"><IconButton onClick={() => setShowPassword(!showPassword)} edge="end">{showPassword ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment> }}
                 />
                 <Stack direction="row" spacing={2} pt={2}>
                   <Button variant="outlined" color="inherit" fullWidth onClick={() => setIsEditing(false)} disabled={isSaving} startIcon={<CancelIcon />}>Cancel</Button>
@@ -190,7 +187,6 @@ export default function Profile() {
                   <Typography variant="body1">{user.email}</Typography>
                 </Box>
                 
-                {/* NEW: Phone Number Display */}
                 <Box>
                   <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
                     <PhoneIcon fontSize="small" color="action" />
@@ -207,6 +203,34 @@ export default function Profile() {
                   <Typography variant="body1">{formatDate(user.createdAt)}</Typography>
                 </Box>
               </Stack>
+
+              {/* REVIEWS SECTION */}
+              <Box mt={5}>
+                <Typography variant="h6" fontWeight="bold" color="text.primary" gutterBottom>Reviews Received</Typography>
+                <Divider sx={{ mb: 3 }} />
+                
+                {user.reviews && user.reviews.length > 0 ? (
+                  <Stack spacing={2}>
+                    {user.reviews.map((review) => (
+                      <Paper key={review._id} variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }}>
+                        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                          <Typography variant="subtitle2" fontWeight="bold">
+                            {review.requester?.name || "A user"} rated you
+                          </Typography>
+                          {renderStars(5)} {/* We assume a 5-star rating for now, or you can add the specific rating to the task model */}
+                        </Stack>
+                        <Typography variant="body2" color="text.secondary">
+                          For the task: <strong>"{review.title}"</strong>
+                        </Typography>
+                      </Paper>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    You haven't received any reviews yet. Complete tasks as a Helper to get rated!
+                  </Typography>
+                )}
+              </Box>
             </>
           )}
         </Box>
