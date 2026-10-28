@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import useAuth from './useAuth';
 import { 
   TextField, 
@@ -10,9 +10,11 @@ import {
   Alert,
   CircularProgress,
   InputAdornment,
-  IconButton
+  IconButton,
+  Paper,
+  Divider
 } from '@mui/material';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { Visibility, VisibilityOff, LockOutlined } from '@mui/icons-material';
 
 export default function Register() {
   const { register } = useAuth();
@@ -44,7 +46,6 @@ export default function Register() {
 
   const handleInputChange = (field) => (e) => {
     setFormData({...formData, [field]: e.target.value});
-    // Clear error when user starts typing
     if (error) setError('');
   };
 
@@ -53,16 +54,37 @@ export default function Register() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 4 }}>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
+    <Container component="main" maxWidth="xs">
+      <Paper 
+        elevation={3} 
+        sx={{ 
+          marginTop: 8, 
+          display: 'flex', 
+          flexDirection: 'column', 
           alignItems: 'center',
+          padding: 4,
+          borderRadius: 2,
+          borderTop: '4px solid #2563eb' // Solid blue accent matching your email template
         }}
       >
-        <Typography variant="h4" component="h1" gutterBottom>
-          Register
+        {/* Professional Icon Header instead of a plain text header */}
+        <Box sx={{ 
+          backgroundColor: '#eff6ff', 
+          p: 1.5, 
+          borderRadius: '50%', 
+          mb: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <LockOutlined sx={{ color: '#2563eb' }} />
+        </Box>
+
+        <Typography component="h1" variant="h5" fontWeight="bold" color="text.primary">
+          Create an Account
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 3 }}>
+          Join Witty HandUp to post or claim tasks.
         </Typography>
         
         {error && (
@@ -71,11 +93,13 @@ export default function Register() {
           </Alert>
         )}
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
+        <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
           <TextField
-            label="Name"
+            label="Full Name"
+            variant="outlined"
             fullWidth
             margin="normal"
+            size="small"
             value={formData.name}
             onChange={handleInputChange('name')}
             disabled={isSubmitting}
@@ -83,10 +107,12 @@ export default function Register() {
             autoFocus
           />
           <TextField
-            label="Email"
+            label="Email Address"
             type="email"
+            variant="outlined"
             fullWidth
             margin="normal"
+            size="small"
             value={formData.email}
             onChange={handleInputChange('email')}
             disabled={isSubmitting}
@@ -95,8 +121,10 @@ export default function Register() {
           <TextField
             label="Password"
             type={showPassword ? 'text' : 'password'}
+            variant="outlined"
             fullWidth
             margin="normal"
+            size="small"
             value={formData.password}
             onChange={handleInputChange('password')}
             disabled={isSubmitting}
@@ -109,48 +137,67 @@ export default function Register() {
                     aria-label="toggle password visibility"
                     onClick={togglePasswordVisibility}
                     edge="end"
+                    size="small"
                   >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                    {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                   </IconButton>
                 </InputAdornment>
               ),
             }}
-            helperText="Password must be at least 6 characters long"
+            helperText="Must be at least 6 characters"
           />
           <Button 
             type="submit" 
             variant="contained" 
             fullWidth
             disabled={isSubmitting}
-            sx={{ mt: 3, mb: 2 }}
+            disableElevation // Removes the 3D shadow for a flat, modern look
+            sx={{ 
+              mt: 3, 
+              mb: 2,
+              backgroundColor: '#2563eb', // Solid blue
+              '&:hover': {
+                backgroundColor: '#1d4ed8', 
+              },
+              py: 1.2,
+              fontWeight: 'bold',
+              textTransform: 'none'
+            }}
             size="large"
           >
             {isSubmitting ? (
               <>
-                <CircularProgress size={24} sx={{ mr: 1 }} />
+                <CircularProgress size={24} sx={{ mr: 1, color: 'white' }} />
                 Creating Account...
               </>
             ) : (
-              'Register'
+              'Create Account'
             )}
           </Button>
+          
+          <Divider sx={{ my: 2 }}>
+            <Typography variant="caption" color="text.secondary">
+              OR
+            </Typography>
+          </Divider>
+
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              Already have an account?{' '}
+              <Link 
+                to="/login" 
+                style={{ 
+                  color: '#2563eb', 
+                  fontWeight: 600, 
+                  textDecoration: 'none' 
+                }}
+              >
+                Sign in here
+              </Link>
+            </Typography>
+          </Box>
         </Box>
-        
-        <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
-            Already have an account?{' '}
-            <Button 
-              component="a" 
-              href="/login" 
-              variant="text" 
-              size="small"
-              disabled={isSubmitting}
-            >
-              Sign in
-            </Button>
-          </Typography>
-        </Box>
-      </Box>
+      </Paper>
     </Container>
   );
 }
