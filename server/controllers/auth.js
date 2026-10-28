@@ -7,14 +7,14 @@ import { sendEmail } from '../utils/sendEmail.js';
 // @desc    Register user
 export const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, phone } = req.body; // <-- Added phone
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ success: false, error: 'User already exists' });
     }
 
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ name, email, password, phone });
 
     const welcomeText = `Hello ${user.name},
 
@@ -38,7 +38,13 @@ The Witty HandUp System Team`;
     res.status(201).json({
       success: true,
       token,
-      user: { id: user._id, name: user.name, email: user.email }
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email, 
+        phone: user.phone, // <-- Return phone
+        role: user.role 
+      }
     });
   } catch (err) {
     res.status(400).json({ success: false, error: 'Registration failed: ' + err.message });
@@ -77,6 +83,7 @@ export const login = async (req, res) => {
         name: user.name,
         role: user.role, 
         email: user.email,
+        phone: user.phone, // <-- Return phone
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -100,6 +107,7 @@ export const updateProfile = async (req, res) => {
     // Update text fields if provided
     if (req.body.name) user.name = req.body.name;
     if (req.body.email) user.email = req.body.email;
+    if (req.body.phone !== undefined) user.phone = req.body.phone; // <-- Update phone
 
     // If password is provided, update it (the pre-save hook will hash it)
     if (req.body.password) {
@@ -117,6 +125,7 @@ export const updateProfile = async (req, res) => {
         id: updatedUser._id,
         name: updatedUser.name,
         email: updatedUser.email,
+        phone: updatedUser.phone, // <-- Return phone
         role: updatedUser.role,
         createdAt: updatedUser.createdAt,
         updatedAt: updatedUser.updatedAt
@@ -214,6 +223,7 @@ export const getMe = async (req, res) => {
         id: req.user._id,
         name: req.user.name,
         email: req.user.email,
+        phone: req.user.phone, // <-- Return phone
         role: req.user.role, 
         createdAt: req.user.createdAt,
         updatedAt: req.user.updatedAt
