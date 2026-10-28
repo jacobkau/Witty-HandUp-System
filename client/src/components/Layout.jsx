@@ -7,7 +7,7 @@ import TaskForm from '../features/tasks/TaskForm';
 import TaskList from '../features/tasks/TaskList';
 import EditTaskPage from '../features/tasks/EditTaskPage';
 import Profile from '../features/users/Profile';
-import Home from '../features/Home'; 
+import Home from '../features/auth/Home'; 
 import AdminDashboard from '../features/admin/AdminDashboard'; 
 import Navbar from './Navbar';
 
