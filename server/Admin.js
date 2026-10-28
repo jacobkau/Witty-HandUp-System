@@ -11,7 +11,7 @@ const makeAdmins = async (emails) => {
 
     for (const email of emails) {
       const user = await User.findOneAndUpdate(
-        { email: email.toLowerCase() }, // Ensure lowercase match
+        { email: email.toLowerCase() }, 
         { role: 'admin' },
         { new: true }
       );
@@ -32,9 +32,8 @@ const makeAdmins = async (emails) => {
 
 // Add as many emails as you want here
 const adminEmails = [
-  'your-email@example.com',
-  'jacob@example.com',
-  'admin@wittyhandup.com'
+  'kaujacob4@gmail.com',
+  'Wittyhighbrowtechnologies@gmail.com',
 ];
 
 makeAdmins(adminEmails);
