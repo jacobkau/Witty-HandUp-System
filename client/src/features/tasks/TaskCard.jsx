@@ -35,10 +35,12 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
   const [ratingValue, setRatingValue] = useState(0);
   const [isRated, setIsRated] = useState(task?.isRated || false);
 
-  // Bulletproof Owner Check
+  // BULLETPROOF ID CHECKS
+  const currentUserId = user?._id || user?.id;
   const requesterId = task?.requester?._id || task?.createdBy?._id || task?.requester || task?.createdBy;
-  const isCreator = user?._id === requesterId;
-  const isClaimer = user?._id === task?.helper?._id;
+  
+  const isCreator = currentUserId && requesterId && currentUserId.toString() === requesterId.toString();
+  const isClaimer = currentUserId && task?.helper?._id && currentUserId.toString() === task.helper._id.toString();
   const isAdmin = user?.role === 'admin';
   
   const isCompleted = task?.status === "completed";
@@ -46,7 +48,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
   
   const canClaim = !isCreator && !isAdmin && task?.status === "open" && !isClaimer;
 
-  // Map Coordinates (MongoDB uses [Lng, Lat])
+  // Map Coordinates
   const lng = task?.location?.coordinates?.[0] || 0;
   const lat = task?.location?.coordinates?.[1] || 0;
   const hasValidLocation = lng !== 0 && lat !== 0;
@@ -218,6 +220,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
             )}
           </Box>
 
+          {/* THIS IS THE MENU BUTTON. It will now show up correctly. */}
           {(isCreator || isAdmin) && (
             <IconButton size="small" onClick={handleMenuOpen}>
               <MoreVertIcon />
