@@ -2,24 +2,34 @@ import Task from "../models/Task.js";
 import { getIO } from "../sockets/socket.js";
 import { sendEmail } from "../utils/sendEmail.js";
 
-// @desc    Get all tasks (with location filtering, pagination, and tab filtering)
-// @route   GET /api/tasks
 export const getTasks = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10; 
     const skip = (page - 1) * limit;
 
+    // 1. Build the base query 
     let query = {};
-
     if (req.query.admin === 'true') {
-      if (req.query.status) {
-        query.status = req.query.status;
-      }
+      if (req.query.status) query.status = req.query.status;
     } else {
       query.status = req.query.status || { $ne: "completed" };
     }
 
+    // 2. Add Category Filtering
+    if (req.query.category && req.query.category !== 'all') {
+      query.category = req.query.category;
+    }
+
+    // 3. Add Text Search 
+    if (req.query.search) {
+      query.$or = [
+        { title: { $regex: req.query.search, $options: 'i' } }, 
+        { description: { $regex: req.query.search, $options: 'i' } }
+      ];
+    }
+
+    // 4. Add Location Filtering
     if (req.query.longitude && req.query.latitude) {
       query.location = {
         $near: {
@@ -40,6 +50,7 @@ export const getTasks = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
+
     res.status(200).json({ 
       success: true, 
       count: tasks.length,
@@ -52,7 +63,6 @@ export const getTasks = async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 };
-
 // @desc    Create a task
 // @route   POST /api/tasks
 export const createTask = async (req, res) => {
