@@ -5,7 +5,7 @@ import TaskForm from './TaskForm';
 import useAuth from '../auth/useAuth';
 import { Typography, CircularProgress, Box, Button } from '@mui/material';
 
-export default function EditTaskPage({ onUpdate }) {  // Added onUpdate prop
+export default function EditTaskPage({ onUpdate }) {
   const { taskId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -35,63 +35,57 @@ export default function EditTaskPage({ onUpdate }) {  // Added onUpdate prop
       const response = await api.put(`/tasks/${task._id}`, formData);
       if (onUpdate) onUpdate(response.data.data);
       
-      navigate(location.state?.from || '/tasks', { 
-        state: { message: 'Task updated successfully' } 
-      });
+      setTimeout(() => {
+        navigate(location.state?.from || '/tasks');
+      }, 1500);
+      
     } catch (err) {
       console.error('Update error:', err);
       setError(err.response?.data?.error || 'Failed to update task');
+      throw err; 
     }
   };
 
-  if (loading) {
+  if (loading) return <Box display="flex" justifyContent="center" p={6}><CircularProgress /></Box>;
+  
+  if (error && !task) {
     return (
-      <Box display="flex" justifyContent="center" p={4}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box p={4}>
-        <Typography color="error">{error}</Typography>
-        <Button onClick={() => navigate(-1)}>Go Back</Button>
+      <Box p={4} textAlign="center">
+        <Typography color="error" variant="h6">{error}</Typography>
+        <Button onClick={() => navigate(-1)} sx={{ mt: 2 }}>Go Back</Button>
       </Box>
     );
   }
 
   if (!task) {
     return (
-      <Box p={4}>
-        <Typography>Task not found</Typography>
-        <Button onClick={() => navigate(-1)}>Go Back</Button>
+      <Box p={4} textAlign="center">
+        <Typography variant="h6">Task not found</Typography>
+        <Button onClick={() => navigate(-1)} sx={{ mt: 2 }}>Go Back</Button>
       </Box>
     );
   }
 
-  if (user?._id !== task.requester?._id) {
+  const isOwner = user?._id === task.requester?._id;
+  const isAdmin = user?.role === 'admin';
+
+  if (!isOwner && !isAdmin) {
     return (
-      <Box p={4}>
-        <Typography color="error">You don't have permission to edit this task</Typography>
-        <Button onClick={() => navigate(-1)}>Go Back</Button>
+      <Box p={4} textAlign="center">
+        <Typography color="error" variant="h6">You don't have permission to edit this task</Typography>
+        <Button onClick={() => navigate(-1)} sx={{ mt: 2 }}>Go Back</Button>
       </Box>
     );
   }
 
   return (
     <Box p={2}>
-      <Typography variant="h4" gutterBottom>Edit Task</Typography>
       <TaskForm 
         initialValues={{
           title: task.title,
           description: task.description,
           category: task.category,
-          location: task.location || {
-            type: 'Point',
-            coordinates: [0, 0],
-            address: ''
-          },
+          location: task.location || { type: 'Point', coordinates: [0, 0], address: '' },
           deadline: task.deadline ? new Date(task.deadline) : null
         }}
         onSubmit={handleSubmit} 
