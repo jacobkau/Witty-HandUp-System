@@ -86,6 +86,46 @@ export const login = async (req, res) => {
   }
 };
 
+// @desc    Update user profile
+// @route   PUT /api/auth/me
+export const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('+password');
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    // Update text fields if provided
+    if (req.body.name) user.name = req.body.name;
+    if (req.body.email) user.email = req.body.email;
+
+    // If password is provided, update it (the pre-save hook will hash it)
+    if (req.body.password) {
+      if (req.body.password.length < 6) {
+        return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
+      }
+      user.password = req.body.password;
+    }
+
+    const updatedUser = await user.save();
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        createdAt: updatedUser.createdAt,
+        updatedAt: updatedUser.updatedAt
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 // @desc    Get current user
 // @route   GET /api/auth/me
 export const getMe = async (req, res) => {
