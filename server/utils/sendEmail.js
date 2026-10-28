@@ -13,7 +13,7 @@ export const sendEmail = async (toEmail, subject, htmlContent) => {
         
         <!-- Header -->
         <div style="background-color: #2563eb; padding: 24px; text-align: center;">
-          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">💁 Witty HandUp System</h1>
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;"> Witty HandUp System</h1>
         </div>
 
         <!-- Dynamic Body Content -->
