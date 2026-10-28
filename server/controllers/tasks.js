@@ -42,7 +42,8 @@ export const getTasks = async (req, res) => {
     const total = await Task.countDocuments(query);
     const tasks = await Task.find(query)
       .populate("requester", "name email phone")
-      .populate("helper", "name email phone")
+      // FIXED: Added rating and numReviews to the helper populate
+      .populate("helper", "name email phone rating numReviews")
       .populate("createdBy", "name")
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -99,7 +100,6 @@ export const updateTask = async (req, res) => {
 
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
 
-    // Bulletproof Owner Check
     const requesterId = task.requester?._id || task.requester;
     const isOwner = requesterId.toString() === req.user.id;
     const isAdmin = req.user.role === 'admin';
@@ -121,7 +121,7 @@ export const updateTask = async (req, res) => {
     const updatedTask = await task.save();
     const populatedTask = await Task.findById(updatedTask._id)
       .populate("requester", "name email phone")
-      .populate("helper", "name email phone")
+      .populate("helper", "name email phone rating numReviews")
       .populate("createdBy", "name");
 
     const io = getIO();
@@ -150,7 +150,8 @@ export const claimTask = async (req, res) => {
     const updatedTask = await task.save();
     const populatedTask = await Task.findById(updatedTask._id)
       .populate("requester", "name email phone")
-      .populate("helper", "name email phone");
+      // FIXED: Added rating and numReviews here too
+      .populate("helper", "name email phone rating numReviews");
 
     if (populatedTask.requester?.email) {
       const emailText = `Hello ${populatedTask.requester.name},
@@ -231,7 +232,7 @@ export const getMyTasks = async (req, res) => {
       $or: [{ requester: req.user.id }, { helper: req.user.id }],
     })
       .populate("requester", "name email")
-      .populate("helper", "name email")
+      .populate("helper", "name email rating numReviews")
       .populate("createdBy", "name");
 
     res.status(200).json({ success: true, count: tasks.length, data: tasks });
@@ -243,8 +244,6 @@ export const getMyTasks = async (req, res) => {
 export const rateTask = async (req, res) => {
   try {
     const { rating } = req.body;
-    console.log("RATING ATTEMPT:", { taskId: req.params.id, rating, userId: req.user.id }); 
-
     const task = await Task.findById(req.params.id);
 
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
@@ -258,20 +257,25 @@ export const rateTask = async (req, res) => {
     const helper = await User.findById(task.helper);
     if (!helper) return res.status(404).json({ success: false, error: "Helper not found" });
 
-    const newNumReviews = (helper.numReviews || 0) + 1;
-    const newRating = (((helper.rating || 0) * (helper.numReviews || 0)) + rating) / newNumReviews;
+    const newNumReviews = helper.numReviews + 1;
+    const newRating = ((helper.rating * helper.numReviews) + rating) / newNumReviews;
 
     helper.rating = newRating;
     helper.numReviews = newNumReviews;
     await helper.save();
 
     task.isRated = true;
-    task.ratingValue = rating; 
-    await task.save();
+    task.ratingValue = rating;
+    
+    const updatedTask = await task.save();
+    const populatedTask = await Task.findById(updatedTask._id)
+      .populate("requester", "name email phone")
+      .populate("helper", "name email phone rating numReviews")
+      .populate("createdBy", "name");
 
-    res.status(200).json({ success: true, message: "Rating submitted successfully" });
+    res.status(200).json({ success: true, message: "Rating submitted successfully", data: populatedTask });
   } catch (err) {
-    console.error("RATE TASK ERROR:", err); // <-- ADD THIS LOG
+    console.error("Rating Error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 };
@@ -286,10 +290,7 @@ export const deleteTask = async (req, res) => {
     const isAdmin = req.user.role === 'admin';
 
     if (!isOwner && !isAdmin) {
-      return res.status(403).json({ 
-        success: false, 
-        error: "Not authorized to delete this task" 
-      });
+      return res.status(403).json({ success: false, error: "Not authorized to delete this task" });
     }
 
     await task.deleteOne();
