@@ -9,7 +9,15 @@ export const getTasks = async (req, res) => {
     let query = { status: { $ne: "completed" } };
 
     if (req.query.longitude && req.query.latitude) {
-      query.location = { /* your location query */ };
+      query.location = {
+        $near: {
+          $geometry: {
+            type: "Point",
+            coordinates: [parseFloat(req.query.longitude), parseFloat(req.query.latitude)],
+          },
+          $maxDistance: 10000, /
+        },
+      };
     }
 
     const tasks = await Task.find(query)
@@ -35,13 +43,18 @@ export const createTask = async (req, res) => {
 
   try {
     const task = await Task.create({
-      title, description, category, location, deadline,
+      title,
+      description,
+      category,
+      location,
+      deadline,
       requester: req.user.id,
       createdBy: req.user.id,
       status: "open",
     });
 
     const populatedTask = await Task.findById(task._id).populate("requester", "name");
+    
     const io = getIO();
     io.emit("new-task", populatedTask);
 
@@ -60,8 +73,19 @@ export const updateTask = async (req, res) => {
     const task = await Task.findById(req.params.id);
 
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
-    if (task.requester.toString() !== req.user.id) return res.status(403).json({ success: false, error: "Not authorized" });
-    if (task.status !== "open") return res.status(400).json({ success: false, error: "Only open tasks can be updated" });
+
+    // Only the task requester (or admin) can update the task
+    const isOwner = task.requester.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ success: false, error: "Not authorized to update this task" });
+    }
+
+    // Cannot update claimed or completed tasks
+    if (task.status !== "open") {
+      return res.status(400).json({ success: false, error: "Only open tasks can be updated" });
+    }
 
     task.title = title || task.title;
     task.description = description || task.description;
@@ -99,19 +123,22 @@ export const claimTask = async (req, res) => {
 
     task.helper = req.user.id;
     task.status = "claimed";
+    
     const updatedTask = await task.save();
     const populatedTask = await Task.findById(updatedTask._id)
       .populate("requester", "name email")
       .populate("helper", "name email");
 
-    // SEND EMAIL TO REQUESTER
-    const emailHtml = `
-      <h2 style="color: #111827; margin-top: 0; font-size: 20px;">Good news! Your task was claimed.</h2>
-      <p>Hi ${populatedTask.requester.name},</p>
-      <p><strong>${populatedTask.helper.name}</strong> has claimed your task: <strong>"${populatedTask.title}"</strong>.</p>
-      <p>They will be in touch with you shortly at this email address (${populatedTask.requester.email}) to coordinate.</p>
-    `;
-    await sendEmail(populatedTask.requester.email, 'Your task has been claimed!', emailHtml);
+    //  SEND EMAIL TO REQUESTER
+    if (populatedTask.requester?.email) {
+      const emailHtml = `
+        <h2 style="color: #111827; margin-top: 0; font-size: 20px;">Good news! Your task was claimed.</h2>
+        <p>Hi ${populatedTask.requester.name},</p>
+        <p><strong>${populatedTask.helper.name}</strong> has claimed your task: <strong>"${populatedTask.title}"</strong>.</p>
+        <p>They will be in touch with you shortly at this email address (${populatedTask.requester.email}) to coordinate.</p>
+      `;
+      await sendEmail(populatedTask.requester.email, 'Your task has been claimed!', emailHtml);
+    }
 
     const io = getIO();
     io.emit("task-claimed", populatedTask);
@@ -134,8 +161,9 @@ export const completeTask = async (req, res) => {
 
     const isRequester = task.requester._id.toString() === req.user.id;
     const isHelper = task.helper && task.helper._id.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
 
-    if (!isRequester && !isHelper) {
+    if (!isRequester && !isHelper && !isAdmin) {
       return res.status(403).json({ success: false, error: "Not authorized to complete this task" });
     }
 
@@ -144,6 +172,7 @@ export const completeTask = async (req, res) => {
 
     //  SEND EMAIL TO THE OTHER PARTY
     if (isHelper && task.requester?.email) {
+      // Helper marked it complete -> Notify Requester
       const emailHtml = `
         <h2 style="color: #111827; margin-top: 0; font-size: 20px;">Task Completed!</h2>
         <p>Hi ${task.requester.name},</p>
@@ -151,7 +180,7 @@ export const completeTask = async (req, res) => {
         <p>Please log in to your dashboard to review and confirm.</p>
       `;
       await sendEmail(task.requester.email, 'Task Completed!', emailHtml);
-    } else if (isRequester && task.helper?.email) {
+    } else if ((isRequester || isAdmin) && task.helper?.email) {
       const emailHtml = `
         <h2 style="color: #111827; margin-top: 0; font-size: 20px;">Task Confirmed Complete</h2>
         <p>Hi ${task.helper.name},</p>
@@ -187,14 +216,24 @@ export const getMyTasks = async (req, res) => {
   }
 };
 
-// @desc    Delete a task
+// @desc    Delete a task (Owner or Admin)
 // @route   DELETE /api/tasks/:id
 export const deleteTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
 
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
-    if (task.requester.toString() !== req.user.id) return res.status(403).json({ success: false, error: "Not authorized to delete this task" });
+
+    // Check if the user is the owner OR an admin
+    const isOwner = task.requester.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ 
+        success: false, 
+        error: "Not authorized to delete this task" 
+      });
+    }
 
     await task.deleteOne(); 
 
