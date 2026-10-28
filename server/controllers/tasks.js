@@ -1,14 +1,13 @@
 import Task from "../models/Task.js";
 import { getIO } from "../sockets/socket.js";
+import { sendEmail } from "../utils/sendEmail.js"; 
 
 // @desc    Get all tasks (with location filtering)
 // @route   GET /api/tasks
 export const getTasks = async (req, res) => {
   try {
-    // Show all non-completed tasks (both open and claimed)
     let query = { status: { $ne: "completed" } };
 
-    // Add location filtering if needed
     if (req.query.longitude && req.query.latitude) {
       query.location = { /* your location query */ };
     }
@@ -31,38 +30,24 @@ export const createTask = async (req, res) => {
   const { title, description, category, location, deadline } = req.body;
 
   if (!title || !description || !category) {
-    return res.status(400).json({
-      success: false,
-      message: "Missing required fields",
-    });
+    return res.status(400).json({ success: false, message: "Missing required fields" });
   }
 
   try {
     const task = await Task.create({
-      title,
-      description,
-      category,
-      location,
-      deadline,
+      title, description, category, location, deadline,
       requester: req.user.id,
       createdBy: req.user.id,
       status: "open",
     });
 
-    const populatedTask = await Task.findById(task._id).populate(
-      "requester",
-      "name"
-    );
-
+    const populatedTask = await Task.findById(task._id).populate("requester", "name");
     const io = getIO();
     io.emit("new-task", populatedTask);
 
     res.status(201).json({ success: true, data: populatedTask });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message,
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 };
 
@@ -74,30 +59,10 @@ export const updateTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
 
-    if (!task) {
-      return res.status(404).json({
-        success: false,
-        error: "Task not found",
-      });
-    }
+    if (!task) return res.status(404).json({ success: false, error: "Task not found" });
+    if (task.requester.toString() !== req.user.id) return res.status(403).json({ success: false, error: "Not authorized" });
+    if (task.status !== "open") return res.status(400).json({ success: false, error: "Only open tasks can be updated" });
 
-    // Only the task requester can update the task
-    if (task.requester.toString() !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        error: "Not authorized to update this task",
-      });
-    }
-
-    // Cannot update claimed or completed tasks
-    if (task.status !== "open") {
-      return res.status(400).json({
-        success: false,
-        error: "Only open tasks can be updated",
-      });
-    }
-
-    // Update task fields
     task.title = title || task.title;
     task.description = description || task.description;
     task.category = category || task.category;
@@ -124,43 +89,34 @@ export const updateTask = async (req, res) => {
 export const claimTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id)
-      .populate("requester", "name")
+      .populate("requester", "name email")
       .populate("helper", "name")
       .populate("createdBy", "name");
 
-    if (!task) {
-      return res.status(404).json({
-        success: false,
-        error: "Task not found",
-      });
-    }
-
-    if (task.status !== "open") {
-      return res.status(400).json({
-        success: false,
-        error: "Task already claimed/completed",
-      });
-    }
-
-    // Prevent users from claiming their own tasks
-    if (task.requester?._id.toString() === req.user.id) {
-      return res.status(400).json({
-        success: false,
-        error: "You cannot claim your own task",
-      });
-    }
+    if (!task) return res.status(404).json({ success: false, error: "Task not found" });
+    if (task.status !== "open") return res.status(400).json({ success: false, error: "Task already claimed/completed" });
+    if (task.requester?._id.toString() === req.user.id) return res.status(400).json({ success: false, error: "You cannot claim your own task" });
 
     task.helper = req.user.id;
     task.status = "claimed";
     const updatedTask = await task.save();
+    const populatedTask = await Task.findById(updatedTask._id)
+      .populate("requester", "name email")
+      .populate("helper", "name email");
+
+    // SEND EMAIL TO REQUESTER
+    const emailHtml = `
+      <h2 style="color: #111827; margin-top: 0; font-size: 20px;">Good news! Your task was claimed.</h2>
+      <p>Hi ${populatedTask.requester.name},</p>
+      <p><strong>${populatedTask.helper.name}</strong> has claimed your task: <strong>"${populatedTask.title}"</strong>.</p>
+      <p>They will be in touch with you shortly at this email address (${populatedTask.requester.email}) to coordinate.</p>
+    `;
+    await sendEmail(populatedTask.requester.email, 'Your task has been claimed!', emailHtml);
 
     const io = getIO();
-    io.emit("task-claimed", updatedTask);
+    io.emit("task-claimed", populatedTask);
 
-    res.status(200).json({
-      success: true,
-      data: updatedTask,
-    });
+    res.status(200).json({ success: true, data: populatedTask });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -171,29 +127,39 @@ export const claimTask = async (req, res) => {
 export const completeTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id)
-      .populate("requester", "name")
-      .populate("helper", "name");
+      .populate("requester", "name email")
+      .populate("helper", "name email");
 
-    if (!task) {
-      return res.status(404).json({
-        success: false,
-        error: "Task not found",
-      });
-    }
+    if (!task) return res.status(404).json({ success: false, error: "Task not found" });
 
-    // Only the task requester or helper can mark as complete
-    if (
-      task.requester._id.toString() !== req.user.id &&
-      task.helper?._id.toString() !== req.user.id
-    ) {
-      return res.status(403).json({
-        success: false,
-        error: "Not authorized to complete this task",
-      });
+    const isRequester = task.requester._id.toString() === req.user.id;
+    const isHelper = task.helper && task.helper._id.toString() === req.user.id;
+
+    if (!isRequester && !isHelper) {
+      return res.status(403).json({ success: false, error: "Not authorized to complete this task" });
     }
 
     task.status = "completed";
     const updatedTask = await task.save();
+
+    //  SEND EMAIL TO THE OTHER PARTY
+    if (isHelper && task.requester?.email) {
+      const emailHtml = `
+        <h2 style="color: #111827; margin-top: 0; font-size: 20px;">Task Completed!</h2>
+        <p>Hi ${task.requester.name},</p>
+        <p><strong>${task.helper.name}</strong> has marked the task <strong>"${task.title}"</strong> as completed.</p>
+        <p>Please log in to your dashboard to review and confirm.</p>
+      `;
+      await sendEmail(task.requester.email, 'Task Completed!', emailHtml);
+    } else if (isRequester && task.helper?.email) {
+      const emailHtml = `
+        <h2 style="color: #111827; margin-top: 0; font-size: 20px;">Task Confirmed Complete</h2>
+        <p>Hi ${task.helper.name},</p>
+        <p><strong>${task.requester.name}</strong> has confirmed that the task <strong>"${task.title}"</strong> is complete.</p>
+        <p>Thank you for your help in the community!</p>
+      `;
+      await sendEmail(task.helper.email, 'Task Confirmed Complete', emailHtml);
+    }
 
     const io = getIO();
     io.emit("task-completed", updatedTask);
@@ -227,19 +193,10 @@ export const deleteTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
 
-    if (!task) {
-      return res.status(404).json({ success: false, error: "Task not found" });
-    }
+    if (!task) return res.status(404).json({ success: false, error: "Task not found" });
+    if (task.requester.toString() !== req.user.id) return res.status(403).json({ success: false, error: "Not authorized to delete this task" });
 
-    // Only allow deletion by task creator
-    if (task.requester.toString() !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        error: "Not authorized to delete this task",
-      });
-    }
-
-    await task.remove();
+    await task.deleteOne(); 
 
     const io = getIO();
     io.emit("task-deleted", task._id);
