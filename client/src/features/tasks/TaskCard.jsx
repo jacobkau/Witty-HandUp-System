@@ -16,7 +16,9 @@ import {
   Done as DoneIcon,
   Map as MapIcon,
   Star as StarIcon,
-  StarBorder as StarBorderIcon
+  StarBorder as StarBorderIcon,
+  Phone as PhoneIcon,
+  Directions as DirectionsIcon
 } from "@mui/icons-material";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -43,14 +45,9 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
   
   const canClaim = !isCreator && !isAdmin && task?.status === "open" && !isClaimer;
 
-  // ---------------------------------------------------------
-  // MAP COORDINATE ISOLATION
-  // ---------------------------------------------------------
-  // Destructure safely. Mongo stores [Lng, Lat].
+  // Map Coordinates
   const lng = task?.location?.coordinates?.[0] || 0;
   const lat = task?.location?.coordinates?.[1] || 0;
-  
-  // Check if the location is actually valid (not 0,0)
   const hasValidLocation = lng !== 0 && lat !== 0;
 
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
@@ -153,6 +150,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
             <Divider sx={{ my: 2 }} />
 
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
+              {/* Creator Info & Contact */}
               <Box>
                 <Typography variant="caption" color="text.secondary" fontWeight="bold">CREATOR</Typography>
                 <Stack direction="row" alignItems="center" spacing={1} mt={0.5}>
@@ -160,9 +158,28 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
                     {task.requester?.name?.charAt(0) || "U"}
                   </Avatar>
                   <Typography variant="body2" fontWeight="medium">{task.requester?.name || "Unknown"}</Typography>
+                  
+                  {/* Contact Buttons */}
+                  <Stack direction="row" spacing={0.5} ml={1}>
+                    {task.requester?.email && (
+                      <Tooltip title="Email Creator">
+                        <IconButton size="small" href={`mailto:${task.requester.email}`} color="primary">
+                          <EmailIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {task.requester?.phone && (
+                      <Tooltip title="Call Creator">
+                        <IconButton size="small" href={`tel:${task.requester.phone}`} color="success">
+                          <PhoneIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Stack>
                 </Stack>
               </Box>
 
+              {/* Helper Info */}
               {isClaimed && task.helper && (
                 <Box>
                   <Typography variant="caption" color="text.secondary" fontWeight="bold">HELPER</Typography>
@@ -174,7 +191,32 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
                   </Stack>
                 </Box>
               )}
+
+              {/* Deadline */}
+              {task.deadline && (
+                <Box>
+                  <Typography variant="caption" color="text.secondary" fontWeight="bold">DEADLINE</Typography>
+                  <Stack direction="row" alignItems="center" spacing={0.5} mt={0.5}>
+                    <EventIcon fontSize="small" color="action" />
+                    <Typography variant="body2">{new Date(task.deadline).toLocaleDateString()}</Typography>
+                  </Stack>
+                </Box>
+              )}
             </Stack>
+
+            {/* FULL ADDRESS DISPLAY */}
+            {hasValidLocation && (
+              <Box sx={{ mt: 2, p: 1.5, bgcolor: 'grey.50', borderRadius: 1, border: '1px solid #e0e0e0' }}>
+                <Stack direction="row" spacing={1} alignItems="flex-start">
+                  <MapIcon color="action" fontSize="small" sx={{ mt: 0.2 }} />
+                  <Box>
+                    <Typography variant="caption" fontWeight="bold" color="text.secondary">LOCATION</Typography>
+                    <Typography variant="body2">{task.location.address || "Coordinates pinned"}</Typography>
+                  </Box>
+                </Stack>
+              </Box>
+            )}
+
           </Box>
 
           {(isCreator || isAdmin) && (
@@ -201,48 +243,49 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
           ) : null}
         </Box>
 
-        {/* MAP SECTION */}
-        <Box sx={{ mt: 2, mb: 2 }}>
-          <Button 
-            variant="outlined" 
-            size="small" 
-            startIcon={<MapIcon />} 
-            onClick={() => setShowMap(!showMap)}
-            disabled={!hasValidLocation}
-          >
-            {!hasValidLocation ? "No Location Set" : showMap ? "Hide Map" : "View Location & Directions"}
-          </Button>
-
-          {showMap && hasValidLocation && (
-            <Box sx={{ mt: 2, borderRadius: 2, overflow: 'hidden', border: '1px solid #e0e0e0' }}>
-              {/* Notice the order: lat first, then lng for Google Maps */}
-              <iframe
-                width="100%"
-                height="250"
-                frameBorder="0"
-                style={{ border: 0 }}
-                src={`https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                allowFullScreen
-                title="Task Location"
-              ></iframe>
+        {/* MAP & DIRECTIONS SECTION */}
+        {hasValidLocation && (
+          <Box sx={{ mt: 2 }}>
+            <Stack direction="row" spacing={1}>
+              <Button 
+                variant="outlined" 
+                size="small" 
+                startIcon={<MapIcon />} 
+                onClick={() => setShowMap(!showMap)}
+              >
+                {showMap ? "Hide Map" : "View Map"}
+              </Button>
               
-              <Box sx={{ p: 1.5, bgcolor: 'grey.50', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="caption" color="text.secondary">{task.location.address || "Location pinned"}</Typography>
-                
-                {/* Directions also require lat, then lng */}
-                <Link 
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  underline="hover"
-                  sx={{ fontSize: '0.875rem', fontWeight: 'bold' }}
-                >
-                  Get Directions ↗
-                </Link>
+              {/* Primary Directions Button */}
+              <Button 
+                variant="contained" 
+                size="small" 
+                color="secondary"
+                startIcon={<DirectionsIcon />}
+                href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                disableElevation
+              >
+                Get Directions
+              </Button>
+            </Stack>
+
+            {showMap && (
+              <Box sx={{ mt: 2, borderRadius: 2, overflow: 'hidden', border: '1px solid #e0e0e0' }}>
+                <iframe
+                  width="100%"
+                  height="250"
+                  frameBorder="0"
+                  style={{ border: 0 }}
+                  src={`https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                  allowFullScreen
+                  title="Task Location"
+                ></iframe>
               </Box>
-            </Box>
-          )}
-        </Box>
+            )}
+          </Box>
+        )}
 
         {/* RATINGS SECTION */}
         {isCompleted && isCreator && !isRated && (
