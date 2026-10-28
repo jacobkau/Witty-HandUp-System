@@ -15,15 +15,22 @@ export const register = async (req, res) => {
 
     const user = await User.create({ name, email, password });
 
-    // Send Welcome Email
-    const welcomeHtml = `
-      <h2 style="color: #111827; margin-top: 0; font-size: 20px;">Welcome aboard, ${user.name}!</h2>
-      <p>Thank you for joining our community. We're thrilled to have you on board. Witty HandUp is designed to help you seamlessly delegate tasks and assist your neighbors.</p>
-      <div style="text-align: center; margin: 32px 0;">
-        <a href="https://wittyhandupsystem.vercel.app/" style="background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; display: inline-block;">Go to Dashboard</a>
-      </div>
-    `;
-    await sendEmail(user.email, 'Welcome to Witty HandUp!', welcomeHtml);
+    const welcomeText = `Hello ${user.name},
+
+Welcome to Witty HandUp System! 
+
+We are thrilled to have you on board. Witty HandUp is designed to help you seamlessly delegate tasks and assist your neighbors.
+
+You can now log in to start posting tasks, or browse the dashboard to see what the community needs help with today.
+
+Go to Dashboard: https://wittyhandupsystem.vercel.app/
+
+If you have any questions, simply reply to this email. We're always here to help.
+
+Best regards,
+The Witty HandUp System Team`;
+
+    await sendEmail(user.email, 'Welcome to Witty HandUp!', welcomeText);
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
