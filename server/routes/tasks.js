@@ -8,7 +8,7 @@ import {
   getMyTasks,
   deleteTask
 } from '../controllers/tasks.js';
-import { protect } from '../middleware/auth.js';
+import { protect, adminOnly } from '../middleware/auth.js'; 
 
 const router = express.Router();
 
@@ -18,13 +18,15 @@ router.route('/')
 
 router.route('/:id/claim')
   .put(protect, claimTask);
+  
 router.route('/:id/complete')
   .put(protect, completeTask);
 
 router.route('/my-tasks')
   .get(protect, getMyTasks);
+
 router.route('/:id')
   .put(protect, updateTask) 
-  .delete(protect, deleteTask);
+  .delete(protect, deleteTask); 
 
 export default router;
