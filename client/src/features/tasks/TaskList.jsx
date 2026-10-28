@@ -12,7 +12,11 @@ import {
   Pagination,
   Stack,
   Paper,
+  TextField,
+  MenuItem,
+  InputAdornment
 } from "@mui/material";
+import { Search as SearchIcon } from "@mui/icons-material";
 import { useLocation } from "react-router-dom";
 
 export default function TaskList() {
@@ -23,27 +27,45 @@ export default function TaskList() {
   const [tabValue, setTabValue] = useState(0);
   const location = useLocation();
 
+  // Search & Filter State
+  const [searchTerm, setSearchTerm] = useState("");
+  const [category, setCategory] = useState("all");
+  
+  // Debounce State 
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
   // Pagination State
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setPage(1); 
+    }, 500);
 
+    return () => clearTimeout(timerId);
+  }, [searchTerm]);
+
+  // Main Fetch Effect
   useEffect(() => {
     loadTasks();
-  }, [location.key, user, tabValue, page]);
+  }, [location.key, user, tabValue, page, debouncedSearch, category]);
 
   const loadTasks = async () => {
     try {
       setLoading(true);
       
-      // Determine status based on active tab
       let statusParam = "";
       if (tabValue === 0) statusParam = "open";
       if (tabValue === 1) statusParam = "claimed";
       if (tabValue === 2) statusParam = "completed";
 
-      // Build endpoint
+      // Build endpoint with all filters
       let endpoint = `/tasks?page=${page}&limit=10&status=${statusParam}`;
+      
       if (user?.role === 'admin') endpoint += "&admin=true";
+      if (category !== 'all') endpoint += `&category=${category}`;
+      if (debouncedSearch) endpoint += `&search=${encodeURIComponent(debouncedSearch)}`;
 
       const res = await api.get(endpoint);
       
@@ -77,19 +99,47 @@ export default function TaskList() {
     setPage(1); 
   };
 
-  if (loading && tasks.length === 0) {
-    return (
-      <Box display="flex" justifyContent="center" p={6}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
-    <Box sx={{ maxWidth: 800, mx: "auto", p: { xs: 2, md: 3 } }}>
+    <Box sx={{ maxWidth: 900, mx: "auto", p: { xs: 2, md: 3 } }}>
       <Typography variant="h4" fontWeight="bold" color="text.primary" gutterBottom>
         {user?.role === 'admin' ? 'All System Tasks (Admin)' : 'Task Dashboard'}
       </Typography>
+
+      {/* SEARCH AND FILTER BAR */}
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={3}>
+        <TextField
+          fullWidth
+          size="small"
+          placeholder="Search tasks by title or keyword..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon color="action" />
+              </InputAdornment>
+            ),
+          }}
+        />
+        <TextField
+          select
+          size="small"
+          label="Category"
+          value={category}
+          onChange={(e) => {
+            setCategory(e.target.value);
+            setPage(1);
+          }}
+          sx={{ minWidth: 150 }}
+        >
+          <MenuItem value="all">All Categories</MenuItem>
+          <MenuItem value="errands">Errands</MenuItem>
+          <MenuItem value="repairs">Repairs</MenuItem>
+          <MenuItem value="education">Education</MenuItem>
+          <MenuItem value="donations">Donations</MenuItem>
+          <MenuItem value="other">Other</MenuItem>
+        </TextField>
+      </Stack>
 
       <Paper elevation={0} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
         <Tabs
@@ -107,7 +157,11 @@ export default function TaskList() {
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      {tasks.length > 0 ? (
+      {loading && tasks.length === 0 ? (
+        <Box display="flex" justifyContent="center" py={6}>
+          <CircularProgress />
+        </Box>
+      ) : tasks.length > 0 ? (
         <Stack spacing={2}>
           {tasks.map((task) => (
             <TaskCard
@@ -125,9 +179,7 @@ export default function TaskList() {
             No tasks found
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {tabValue === 0 ? "There are currently no open tasks available." : 
-             tabValue === 1 ? "No tasks have been claimed yet." : 
-             "No completed tasks to show."}
+            Try adjusting your search terms or category filters.
           </Typography>
         </Box>
       )}
