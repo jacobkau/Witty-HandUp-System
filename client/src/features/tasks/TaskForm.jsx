@@ -42,6 +42,13 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+
+    // Prevent saving tasks with 0,0 coordinates
+    if (formData.location.coordinates[0] === 0 && formData.location.coordinates[1] === 0) {
+      setError('Please detect your location or provide valid coordinates before saving.');
+      return;
+    }
+
     setIsSubmitting(true);
     
     if (!user) {
@@ -79,24 +86,26 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
+        // POS gives us LATITUDE first, then LONGITUDE
+        const latitude = pos.coords.latitude;
+        const longitude = pos.coords.longitude;
 
         setFormData({
           ...formData,
           location: {
             ...formData.location,
-            coordinates: [lng, lat], // MongoDB requires [Longitude, Latitude]
-            address: `Detected Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`
+            // MongoDB GeoJSON requires LONGITUDE first, then LATITUDE
+            coordinates: [longitude, latitude], 
+            address: `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
           }
         });
         setIsDetectingLocation(false);
       },
       (err) => {
-        setError(`Location detection failed: ${err.message}`);
+        setError(`Location detection failed: ${err.message}. Please ensure GPS is enabled.`);
         setIsDetectingLocation(false);
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } // Forces GPS
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
@@ -115,7 +124,6 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
             value={formData.title}
             onChange={(e) => setFormData({...formData, title: e.target.value})}
             inputProps={{ maxLength: 100 }}
-            helperText={`${formData.title.length}/100 characters`}
           />
           
           <TextField
@@ -167,11 +175,12 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
             
             <Stack direction="row" alignItems="center" justifyContent="space-between" mt={2} flexWrap="wrap" gap={2}>
               <Typography variant="caption" color="text.secondary">
-                GPS: {formData.location.coordinates[1]?.toFixed(4)}, {formData.location.coordinates[0]?.toFixed(4)}
+                {/* Display clearly indicating which is which */}
+                Lat: {formData.location.coordinates[1]?.toFixed(4)} | Lng: {formData.location.coordinates[0]?.toFixed(4)}
               </Typography>
               
-              <Button onClick={detectLocation} variant="outlined" size="small" startIcon={<LocationOnIcon />} disabled={isDetectingLocation}>
-                {isDetectingLocation ? 'Detecting...' : 'Detect GPS Location'}
+              <Button onClick={detectLocation} variant="contained" color="secondary" size="small" startIcon={<LocationOnIcon />} disabled={isDetectingLocation} disableElevation>
+                {isDetectingLocation ? 'Detecting...' : 'Detect My Location'}
               </Button>
             </Stack>
           </Box>
@@ -190,9 +199,7 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
       </form>
 
       <Snackbar open={success} autoHideDuration={6000} onClose={() => setSuccess(false)}>
-        <Alert severity="success" variant="filled">
-          {isEdit ? 'Task updated successfully!' : 'Task created successfully!'}
-        </Alert>
+        <Alert severity="success" variant="filled">{isEdit ? 'Task updated!' : 'Task created!'}</Alert>
       </Snackbar>
 
       <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError(null)}>
