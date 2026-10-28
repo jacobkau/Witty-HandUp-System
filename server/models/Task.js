@@ -44,17 +44,21 @@ const taskSchema = new mongoose.Schema({
     type: mongoose.Schema.ObjectId,
     ref: 'User'
   },
-   isRated: {
-    type: Boolean,
-    default: false
-  },
   helper: {
     type: mongoose.Schema.ObjectId,
     ref: 'User'
+  },
+  isRated: {
+    type: Boolean,
+    default: false
+  },
+  ratingValue: { 
+    type: Number, 
+    min: 1, 
+    max: 5 
   }
 }, { timestamps: true });
 
-// Create geospatial index
 taskSchema.index({ location: '2dsphere' });
 
 const Task = mongoose.model('Task', taskSchema);
