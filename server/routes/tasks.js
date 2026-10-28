@@ -9,7 +9,7 @@ import {
   deleteTask
 } from '../controllers/tasks.js';
 import { protect, adminOnly } from '../middleware/auth.js'; 
-
+import { rateTask } from '../controllers/tasks.js';
 const router = express.Router();
 
 router.route('/')
@@ -21,7 +21,7 @@ router.route('/:id/claim')
   
 router.route('/:id/complete')
   .put(protect, completeTask);
-
+router.post('/:id/rate', protect, rateTask);
 router.route('/my-tasks')
   .get(protect, getMyTasks);
 
