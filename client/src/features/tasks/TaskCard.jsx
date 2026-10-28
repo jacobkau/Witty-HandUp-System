@@ -156,6 +156,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
             <Divider sx={{ my: 2 }} />
 
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
+              {/* Creator Info */}
               <Box>
                 <Typography variant="caption" color="text.secondary" fontWeight="bold">CREATOR</Typography>
                 <Stack direction="row" alignItems="center" spacing={1} mt={0.5}>
@@ -183,6 +184,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
                 </Stack>
               </Box>
 
+              {/* Helper Info & Rating Badge */}
               {isClaimed && task.helper && (
                 <Box>
                   <Typography variant="caption" color="text.secondary" fontWeight="bold">HELPER</Typography>
@@ -190,11 +192,25 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
                     <Avatar sx={{ width: 24, height: 24, fontSize: 12, bgcolor: 'info.main' }}>
                       {task.helper?.name?.charAt(0) || "H"}
                     </Avatar>
-                    <Typography variant="body2" fontWeight="medium">{task.helper.name}</Typography>
+                    <Typography variant="body2" fontWeight="medium">
+                      {task.helper.name}
+                    </Typography>
+                    
+                    {/* NEW: HELPER RATING BADGE */}
+                    {task.helper.numReviews > 0 && (
+                      <Chip 
+                        icon={<StarIcon style={{ color: '#fbbf24', fontSize: 14 }} />}
+                        label={`${task.helper.rating.toFixed(1)} (${task.helper.numReviews})`} 
+                        size="small" 
+                        variant="outlined"
+                        sx={{ height: 20, fontSize: '0.75rem', borderColor: '#fbbf24', color: 'text.secondary' }}
+                      />
+                    )}
                   </Stack>
                 </Box>
               )}
 
+              {/* Deadline */}
               {task.deadline && (
                 <Box>
                   <Typography variant="caption" color="text.secondary" fontWeight="bold">DEADLINE</Typography>
