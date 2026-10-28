@@ -253,7 +253,6 @@ export const rateTask = async (req, res) => {
       return res.status(403).json({ success: false, error: "Only the task creator can leave a rating" });
     }
 
-    // FIXED: User is now properly imported at the top
     const helper = await User.findById(task.helper);
     if (!helper) return res.status(404).json({ success: false, error: "Helper not found" });
 
@@ -265,6 +264,7 @@ export const rateTask = async (req, res) => {
     await helper.save();
 
     task.isRated = true;
+    task.ratingValue = rating; // <-- SAVES THE SPECIFIC RATING TO THE TASK
     await task.save();
 
     res.status(200).json({ success: true, message: "Rating submitted successfully" });
