@@ -1,4 +1,5 @@
 import Task from "../models/Task.js";
+import User from "../models/User.js";
 import { getIO } from "../sockets/socket.js";
 import { sendEmail } from "../utils/sendEmail.js";
 
@@ -8,7 +9,6 @@ export const getTasks = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10; 
     const skip = (page - 1) * limit;
 
-    // 1. Build the base query 
     let query = {};
     if (req.query.admin === 'true') {
       if (req.query.status) query.status = req.query.status;
@@ -16,12 +16,10 @@ export const getTasks = async (req, res) => {
       query.status = req.query.status || { $ne: "completed" };
     }
 
-    // 2. Add Category Filtering
     if (req.query.category && req.query.category !== 'all') {
       query.category = req.query.category;
     }
 
-    // 3. Add Text Search 
     if (req.query.search) {
       query.$or = [
         { title: { $regex: req.query.search, $options: 'i' } }, 
@@ -29,7 +27,6 @@ export const getTasks = async (req, res) => {
       ];
     }
 
-    // 4. Add Location Filtering
     if (req.query.longitude && req.query.latitude) {
       query.location = {
         $near: {
@@ -63,8 +60,7 @@ export const getTasks = async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 };
-// @desc    Create a task
-// @route   POST /api/tasks
+
 export const createTask = async (req, res) => {
   const { title, description, category, location, deadline } = req.body;
 
@@ -95,8 +91,6 @@ export const createTask = async (req, res) => {
   }
 };
 
-// @desc    Update a task
-// @route   PUT /api/tasks/:id
 export const updateTask = async (req, res) => {
   const { title, description, category, location, deadline } = req.body;
 
@@ -105,7 +99,9 @@ export const updateTask = async (req, res) => {
 
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
 
-    const isOwner = task.requester.toString() === req.user.id;
+    // Bulletproof Owner Check
+    const requesterId = task.requester?._id || task.requester;
+    const isOwner = requesterId.toString() === req.user.id;
     const isAdmin = req.user.role === 'admin';
 
     if (!isOwner && !isAdmin) {
@@ -124,8 +120,8 @@ export const updateTask = async (req, res) => {
 
     const updatedTask = await task.save();
     const populatedTask = await Task.findById(updatedTask._id)
-      .populate("requester", "name email")
-      .populate("helper", "name email")
+      .populate("requester", "name email phone")
+      .populate("helper", "name email phone")
       .populate("createdBy", "name");
 
     const io = getIO();
@@ -137,12 +133,10 @@ export const updateTask = async (req, res) => {
   }
 };
 
-// @desc    Claim a task
-// @route   PUT /api/tasks/:id/claim
 export const claimTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id)
-      .populate("requester", "name email")
+      .populate("requester", "name email phone")
       .populate("helper", "name")
       .populate("createdBy", "name");
 
@@ -155,10 +149,9 @@ export const claimTask = async (req, res) => {
     
     const updatedTask = await task.save();
     const populatedTask = await Task.findById(updatedTask._id)
-      .populate("requester", "name email")
-      .populate("helper", "name email");
+      .populate("requester", "name email phone")
+      .populate("helper", "name email phone");
 
-    // SEND EMAIL TO REQUESTER 
     if (populatedTask.requester?.email) {
       const emailText = `Hello ${populatedTask.requester.name},
 
@@ -180,8 +173,6 @@ Thank you for using Witty HandUp!`;
   }
 };
 
-// @desc    Complete a task
-// @route   PUT /api/tasks/:id/complete
 export const completeTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id)
@@ -201,7 +192,6 @@ export const completeTask = async (req, res) => {
     task.status = "completed";
     const updatedTask = await task.save();
 
-    // SEND EMAIL TO THE OTHER PARTY 
     if (isHelper && task.requester?.email) {
       const emailText = `Hello ${task.requester.name},
 
@@ -235,8 +225,6 @@ The Witty HandUp Team`;
   }
 };
 
-// @desc    Get user's tasks
-// @route   GET /api/tasks/my-tasks
 export const getMyTasks = async (req, res) => {
   try {
     const tasks = await Task.find({
@@ -252,27 +240,23 @@ export const getMyTasks = async (req, res) => {
   }
 };
 
-// Add to the bottom of controllers/tasks.js
-// @desc    Rate a completed task
-// @route   POST /api/tasks/:id/rate
 export const rateTask = async (req, res) => {
   try {
-    const { rating } = req.body; // Expecting a number 1-5
+    const { rating } = req.body;
     const task = await Task.findById(req.params.id);
 
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
     if (task.status !== "completed") return res.status(400).json({ success: false, error: "Task must be completed first" });
     if (task.isRated) return res.status(400).json({ success: false, error: "Task already rated" });
     
-    // Only the Requester can rate the Helper
     if (task.requester.toString() !== req.user.id) {
       return res.status(403).json({ success: false, error: "Only the task creator can leave a rating" });
     }
 
+    // FIXED: User is now properly imported at the top
     const helper = await User.findById(task.helper);
     if (!helper) return res.status(404).json({ success: false, error: "Helper not found" });
 
-    // Calculate new average
     const newNumReviews = helper.numReviews + 1;
     const newRating = ((helper.rating * helper.numReviews) + rating) / newNumReviews;
 
@@ -289,8 +273,6 @@ export const rateTask = async (req, res) => {
   }
 };
 
-// @desc    Delete a task (Owner or Admin)
-// @route   DELETE /api/tasks/:id
 export const deleteTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
