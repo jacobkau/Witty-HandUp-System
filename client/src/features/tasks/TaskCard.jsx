@@ -246,7 +246,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
           ) : null}
         </Box>
 
-        {/* WOW FACTOR 1: Interactive Map & Directions */}
+        {/* WOW FACTOR 1: Interactive Map & Directions (Google Maps Embed) */}
         <Box sx={{ mt: 2, mb: 2 }}>
           <Button 
             variant="outlined" 
@@ -263,24 +263,24 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
                 width="100%"
                 height="250"
                 frameBorder="0"
-                scrolling="no"
-                marginHeight="0"
-                marginWidth="0"
-                src={`https://www.openstreetmap.org/export/embed.html?bbox=${task.location.coordinates[0] - 0.01}%2C${task.location.coordinates[1] - 0.01}%2C${task.location.coordinates[0] + 0.01}%2C${task.location.coordinates[1] + 0.01}&layer=mapnik&marker=${task.location.coordinates[1]}%2C${task.location.coordinates[0]}`}
                 style={{ border: 0 }}
+                src={`https://maps.google.com/maps?q=${task.location.coordinates[1]},${task.location.coordinates[0]}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                 allowFullScreen
                 title="Task Location"
               ></iframe>
               
-              <Box sx={{ p: 1, bgcolor: 'grey.50', textAlign: 'center' }}>
+              <Box sx={{ p: 1.5, bgcolor: 'grey.50', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="caption" color="text.secondary">
+                  {task.location.address || "Location pinned on map"}
+                </Typography>
                 <Link 
                   href={`https://www.google.com/maps/dir/?api=1&destination=${task.location.coordinates[1]},${task.location.coordinates[0]}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   underline="hover"
-                  sx={{ fontSize: '0.875rem', fontWeight: 'bold' }}
+                  sx={{ fontSize: '0.875rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 0.5 }}
                 >
-                  Get Directions via Google Maps
+                  Get Directions ↗
                 </Link>
               </Box>
             </Box>
