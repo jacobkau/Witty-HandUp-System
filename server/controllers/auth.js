@@ -96,7 +96,7 @@ export const getMe = async (req, res) => {
         id: req.user._id,
         name: req.user.name,
         email: req.user.email,
-        role: user.role, 
+        role: req.user.role, 
         createdAt: req.user.createdAt,
         updatedAt: req.user.updatedAt
       },
