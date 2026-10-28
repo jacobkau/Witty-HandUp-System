@@ -28,9 +28,9 @@ const taskSchema = new mongoose.Schema({
       required: true
     },
     coordinates: {
-      type: [Number], // [longitude, latitude]
+      type: [Number],
       required: true,
-      index: '2dsphere' // Geospatial index
+      index: '2dsphere' 
     },
     address: String
   },
@@ -43,6 +43,10 @@ const taskSchema = new mongoose.Schema({
   createdBy: {
     type: mongoose.Schema.ObjectId,
     ref: 'User'
+  },
+   isRated: {
+    type: Boolean,
+    default: false
   },
   helper: {
     type: mongoose.Schema.ObjectId,
