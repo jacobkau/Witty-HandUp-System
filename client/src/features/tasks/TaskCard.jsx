@@ -35,7 +35,8 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
   const [ratingValue, setRatingValue] = useState(0);
   const [isRated, setIsRated] = useState(task?.isRated || false);
 
-  const requesterId = task?.requester?._id || task?.createdBy?._id || task?.createdBy;
+  // Bulletproof Owner Check
+  const requesterId = task?.requester?._id || task?.createdBy?._id || task?.requester || task?.createdBy;
   const isCreator = user?._id === requesterId;
   const isClaimer = user?._id === task?.helper?._id;
   const isAdmin = user?.role === 'admin';
@@ -45,7 +46,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
   
   const canClaim = !isCreator && !isAdmin && task?.status === "open" && !isClaimer;
 
-  // Map Coordinates
+  // Map Coordinates (MongoDB uses [Lng, Lat])
   const lng = task?.location?.coordinates?.[0] || 0;
   const lat = task?.location?.coordinates?.[1] || 0;
   const hasValidLocation = lng !== 0 && lat !== 0;
@@ -159,7 +160,6 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
                   </Avatar>
                   <Typography variant="body2" fontWeight="medium">{task.requester?.name || "Unknown"}</Typography>
                   
-                  {/* Contact Buttons */}
                   <Stack direction="row" spacing={0.5} ml={1}>
                     {task.requester?.email && (
                       <Tooltip title="Email Creator">
@@ -204,7 +204,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
               )}
             </Stack>
 
-            {/* FULL ADDRESS DISPLAY */}
+            {/* ADDRESS DISPLAY */}
             {hasValidLocation && (
               <Box sx={{ mt: 2, p: 1.5, bgcolor: 'grey.50', borderRadius: 1, border: '1px solid #e0e0e0' }}>
                 <Stack direction="row" spacing={1} alignItems="flex-start">
@@ -216,7 +216,6 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
                 </Stack>
               </Box>
             )}
-
           </Box>
 
           {(isCreator || isAdmin) && (
@@ -243,29 +242,18 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
           ) : null}
         </Box>
 
-        {/* MAP & DIRECTIONS SECTION */}
+        {/* MAP & DIRECTIONS */}
         {hasValidLocation && (
           <Box sx={{ mt: 2 }}>
             <Stack direction="row" spacing={1}>
-              <Button 
-                variant="outlined" 
-                size="small" 
-                startIcon={<MapIcon />} 
-                onClick={() => setShowMap(!showMap)}
-              >
+              <Button variant="outlined" size="small" startIcon={<MapIcon />} onClick={() => setShowMap(!showMap)}>
                 {showMap ? "Hide Map" : "View Map"}
               </Button>
               
-              {/* Primary Directions Button */}
               <Button 
-                variant="contained" 
-                size="small" 
-                color="secondary"
-                startIcon={<DirectionsIcon />}
+                variant="contained" size="small" color="secondary" startIcon={<DirectionsIcon />}
                 href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                disableElevation
+                target="_blank" rel="noopener noreferrer" disableElevation
               >
                 Get Directions
               </Button>
@@ -274,20 +262,16 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
             {showMap && (
               <Box sx={{ mt: 2, borderRadius: 2, overflow: 'hidden', border: '1px solid #e0e0e0' }}>
                 <iframe
-                  width="100%"
-                  height="250"
-                  frameBorder="0"
-                  style={{ border: 0 }}
+                  width="100%" height="250" frameBorder="0" style={{ border: 0 }}
                   src={`https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                  allowFullScreen
-                  title="Task Location"
+                  allowFullScreen title="Task Location"
                 ></iframe>
               </Box>
             )}
           </Box>
         )}
 
-        {/* RATINGS SECTION */}
+        {/* RATINGS */}
         {isCompleted && isCreator && !isRated && (
           <Box sx={{ mt: 3, p: 2, bgcolor: 'warning.50', borderRadius: 2, border: '1px dashed #ffb74d' }}>
             <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Rate the Helper: {task.helper?.name}</Typography>
@@ -302,7 +286,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
           </Box>
         )}
 
-        {/* CHAT SECTION */}
+        {/* CHAT */}
         {(isClaimed || isCompleted) && (isCreator || isClaimer || isAdmin) && (
           <Box mt={3}><ChatBox taskId={task._id} /></Box>
         )}
