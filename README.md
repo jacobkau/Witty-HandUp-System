@@ -1,6 +1,5 @@
-# ** Witty HandUp - Task Management System**  
-
-## ** Table of Contents**  
+# Witty HandUp - Task Management System
+## Table of Contents
 1. [Project Overview](#-project-overview)  
 2. [Features](#-features)  
 3. [Tech Stack](#-tech-stack)  
@@ -13,7 +12,7 @@
 
 ---
 
-## ** Project Overview**  
+## Project Overview
 **Witty HandUp** is a community-driven task management platform where users can:  
 - **Post tasks** they need help with (errands, repairs, education, etc.).  
 - **Claim tasks** posted by others.  
@@ -24,20 +23,20 @@ Built with **MERN Stack (MongoDB, Express.js, React, Node.js)** + **Material-UI*
 
 ---
 
-## ** Features**  
-### ** User Roles & Task Flow**  
+## Features
+### User Roles & Task Flow
 | Role | Actions |
 |------|---------|
 | **Requester** | Create, Edit, Delete tasks |
 | **Helper** | Claim & Complete tasks |
 | **All Users** | View tasks, filter by location |
 
-### ** Task Status**  
+### Task Status
 - ** Open** – Available for claiming  
 - ** Claimed** – Taken by a helper  
 - ** Completed** – Finished  
 
-### ** Key Functionalities**  
+### Key Functionalities
 - **Real-time updates** (task status changes)  
 - **Location-based task filtering** (10km radius)  
 - **User profiles with contact info** (email)  
@@ -45,8 +44,8 @@ Built with **MERN Stack (MongoDB, Express.js, React, Node.js)** + **Material-UI*
 
 ---
 
-## ** Tech Stack**  
-### **Backend**  
+## Tech Stack
+### Backend
 - **Node.js** (Runtime)  
 - **Express.js** (API Framework)  
 - **MongoDB** (Database)  
