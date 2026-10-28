@@ -243,6 +243,8 @@ export const getMyTasks = async (req, res) => {
 export const rateTask = async (req, res) => {
   try {
     const { rating } = req.body;
+    console.log("RATING ATTEMPT:", { taskId: req.params.id, rating, userId: req.user.id }); 
+
     const task = await Task.findById(req.params.id);
 
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
@@ -256,19 +258,20 @@ export const rateTask = async (req, res) => {
     const helper = await User.findById(task.helper);
     if (!helper) return res.status(404).json({ success: false, error: "Helper not found" });
 
-    const newNumReviews = helper.numReviews + 1;
-    const newRating = ((helper.rating * helper.numReviews) + rating) / newNumReviews;
+    const newNumReviews = (helper.numReviews || 0) + 1;
+    const newRating = (((helper.rating || 0) * (helper.numReviews || 0)) + rating) / newNumReviews;
 
     helper.rating = newRating;
     helper.numReviews = newNumReviews;
     await helper.save();
 
     task.isRated = true;
-    task.ratingValue = rating; // <-- SAVES THE SPECIFIC RATING TO THE TASK
+    task.ratingValue = rating; 
     await task.save();
 
     res.status(200).json({ success: true, message: "Rating submitted successfully" });
   } catch (err) {
+    console.error("RATE TASK ERROR:", err); // <-- ADD THIS LOG
     res.status(500).json({ success: false, error: err.message });
   }
 };
