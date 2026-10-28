@@ -13,7 +13,6 @@ import {
   Delete as DeleteIcon, 
   Edit as EditIcon, 
   Email as EmailIcon, 
-  Phone as PhoneIcon, 
   Done as DoneIcon,
   Map as MapIcon,
   Star as StarIcon,
@@ -30,7 +29,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   
-  // New States for Map and Ratings
+  // Map and Ratings State
   const [showMap, setShowMap] = useState(false);
   const [ratingValue, setRatingValue] = useState(0);
   const [isRated, setIsRated] = useState(task?.isRated || false);
@@ -125,13 +124,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
   if (!task) return null;
 
   return (
-    <Card sx={{ 
-      mb: 2, 
-      border: '1px solid', 
-      borderColor: isAdmin ? 'secondary.light' : 'divider', 
-      boxShadow: 1,
-      '&:hover': { boxShadow: 3 } 
-    }}>
+    <Card sx={{ mb: 2, border: '1px solid', borderColor: isAdmin ? 'secondary.light' : 'divider', boxShadow: 1, '&:hover': { boxShadow: 3 } }}>
       <CardContent>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
           <Box sx={{ flex: 1 }}>
@@ -158,7 +151,6 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
             <Divider sx={{ my: 2 }} />
 
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
-              {/* Creator Information */}
               <Box>
                 <Typography variant="caption" color="text.secondary" fontWeight="bold">CREATOR</Typography>
                 <Stack direction="row" alignItems="center" spacing={1} mt={0.5}>
@@ -178,7 +170,6 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
                 </Stack>
               </Box>
 
-              {/* Claimer Information */}
               {isClaimed && task.helper && (
                 <Box>
                   <Typography variant="caption" color="text.secondary" fontWeight="bold">HELPER</Typography>
@@ -189,18 +180,10 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
                     <Typography variant="body2" fontWeight="medium">
                       {task.helper.name}
                     </Typography>
-                    {task.helper?.email && (
-                      <Tooltip title="Email helper">
-                        <Link href={`mailto:${task.helper.email}`} color="inherit" underline="hover">
-                          <EmailIcon fontSize="small" />
-                        </Link>
-                      </Tooltip>
-                    )}
                   </Stack>
                 </Box>
               )}
 
-              {/* Deadline */}
               {task.deadline && (
                 <Box>
                   <Typography variant="caption" color="text.secondary" fontWeight="bold">DEADLINE</Typography>
@@ -215,7 +198,6 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
             </Stack>
           </Box>
 
-          {/* Admin/Creator Menu */}
           {(isCreator || isAdmin) && (
             <IconButton size="small" onClick={handleMenuOpen}>
               <MoreVertIcon />
@@ -233,7 +215,6 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
           </MenuItem>
         </Menu>
 
-        {/* Action Buttons */}
         <Box sx={{ mt: 2 }}>
           {canClaim ? (
             <Button variant="contained" size="medium" onClick={handleClaim} fullWidth disabled={isProcessing} startIcon={<AssignmentIndIcon />} disableElevation>
@@ -246,20 +227,14 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
           ) : null}
         </Box>
 
-        {/* WOW FACTOR 1: Interactive Map & Directions */}
+        {/* Interactive Map */}
         <Box sx={{ mt: 2, mb: 2 }}>
-          <Button 
-            variant="outlined" 
-            size="small" 
-            startIcon={<MapIcon />}
-            onClick={() => setShowMap(!showMap)}
-          >
+          <Button variant="outlined" size="small" startIcon={<MapIcon />} onClick={() => setShowMap(!showMap)}>
             {showMap ? "Hide Map" : "View Location & Directions"}
           </Button>
 
           {showMap && task.location?.coordinates && (
             <Box sx={{ mt: 2, borderRadius: 2, overflow: 'hidden', border: '1px solid #e0e0e0' }}>
-              {/* Google Maps Embed - Coordinates FLIPPED to [Latitude, Longitude] */}
               <iframe
                 width="100%"
                 height="250"
@@ -269,18 +244,9 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
                 allowFullScreen
                 title="Task Location"
               ></iframe>
-              
               <Box sx={{ p: 1.5, bgcolor: 'grey.50', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="caption" color="text.secondary">
-                  {task.location.address || "Location pinned on map"}
-                </Typography>
-                <Link 
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${task.location.coordinates[1]},${task.location.coordinates[0]}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  underline="hover"
-                  sx={{ fontSize: '0.875rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 0.5 }}
-                >
+                <Typography variant="caption" color="text.secondary">{task.location.address}</Typography>
+                <Link href={`https://www.google.com/maps/dir/?api=1&destination=${task.location.coordinates[1]},${task.location.coordinates[0]}`} target="_blank" rel="noopener noreferrer" underline="hover" sx={{ fontSize: '0.875rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   Get Directions ↗
                 </Link>
               </Box>
@@ -288,7 +254,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
           )}
         </Box>
 
-        {/* WOW FACTOR 2: User Ratings (Only for Creator on Completed Tasks) */}
+        {/* Ratings */}
         {isCompleted && isCreator && !isRated && (
           <Box sx={{ mt: 3, p: 2, bgcolor: 'warning.50', borderRadius: 2, border: '1px dashed #ffb74d' }}>
             <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
@@ -313,13 +279,12 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
           </Typography>
         )}
 
-        {/* WOW FACTOR 3: Live Chat Section */}
+        {/* Live Chat */}
         {(isClaimed || isCompleted) && (isCreator || isClaimer || isAdmin) && (
           <Box mt={3}>
             <ChatBox taskId={task._id} />
           </Box>
         )}
-
       </CardContent>
 
       <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
