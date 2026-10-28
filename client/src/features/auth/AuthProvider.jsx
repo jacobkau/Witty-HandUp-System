@@ -35,7 +35,8 @@ const AuthProvider = ({ children }) => {
     
     setUser({
       ...res.data.user,
-      role: res.data.user.role || 'user' 
+      role: res.data.user.role || 'user',
+       phone: res.data.user.phone || ''      
     });
   };
 
