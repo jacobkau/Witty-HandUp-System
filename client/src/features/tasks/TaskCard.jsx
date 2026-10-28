@@ -246,7 +246,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
           ) : null}
         </Box>
 
-        {/* WOW FACTOR 1: Interactive Map & Directions (Google Maps Embed) */}
+        {/* WOW FACTOR 1: Interactive Map & Directions */}
         <Box sx={{ mt: 2, mb: 2 }}>
           <Button 
             variant="outlined" 
@@ -259,6 +259,7 @@ export default function TaskCard({ task, onClaim, onUpdate, onDelete }) {
 
           {showMap && task.location?.coordinates && (
             <Box sx={{ mt: 2, borderRadius: 2, overflow: 'hidden', border: '1px solid #e0e0e0' }}>
+              {/* Google Maps Embed - Coordinates FLIPPED to [Latitude, Longitude] */}
               <iframe
                 width="100%"
                 height="250"
