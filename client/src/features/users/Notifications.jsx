@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
-import { Box, Typography, Paper, List, ListItem, ListItemText, Divider, Button, CircularProgress } from '@mui/material';
+import { Box, Typography, Paper, List, ListItem, ListItemText, Divider, CircularProgress } from '@mui/material';
 import { Notifications as BellIcon } from '@mui/icons-material';
 
 export default function Notifications() {
@@ -14,7 +14,6 @@ export default function Notifications() {
       try {
         const res = await api.get('/notifications');
         setNotifications(res.data.data);
-        // Mark as read immediately when opened
         await api.put('/notifications/read');
       } catch (err) {
         console.error(err);
@@ -41,11 +40,7 @@ export default function Notifications() {
             {notifications.map((notif, index) => (
               <Box key={notif._id}>
                 <ListItem 
-                  sx={{ 
-                    bgcolor: notif.isRead ? 'white' : '#f0f9ff', 
-                    cursor: 'pointer',
-                    '&:hover': { bgcolor: '#f8fafc' }
-                  }}
+                  sx={{ bgcolor: notif.isRead ? 'white' : '#f0f9ff', cursor: 'pointer', '&:hover': { bgcolor: '#f8fafc' } }}
                   onClick={() => navigate('/tasks')}
                 >
                   <ListItemText
