@@ -70,12 +70,22 @@ export default function Home() {
         </Container>
       </Box>
 
-      {/* FEATURES SECTION */}
+      {/* FEATURES SECTION - PURE FLEXBOX FOR ABSOLUTE PERFECTION */}
       <Container maxWidth="lg" sx={{ mt: -6 }}>
-        {/* display: 'flex' forces the grid to allow items to stretch to full height */}
-        <Grid container spacing={4} sx={{ display: 'flex', alignItems: 'stretch' }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexWrap: 'wrap', 
+          gap: 3, 
+          justifyContent: 'center' 
+        }}>
           {features.map((feature, index) => (
-            <Grid item xs={12} sm={6} md={3} key={index} sx={{ display: 'flex' }}>
+            <Box 
+              key={index} 
+              sx={{ 
+                width: { xs: '100%', sm: 'calc(50% - 12px)', md: 'calc(25% - 18px)' },
+                display: 'flex' 
+              }}
+            >
               <Paper elevation={3} sx={{ 
                 p: 4, 
                 width: '100%', 
@@ -84,28 +94,26 @@ export default function Home() {
                 alignItems: 'center', 
                 textAlign: 'center',
                 borderRadius: 3,
+                minHeight: 240, // Inalazimisha cards zote ziwe na urefu sawa
                 transition: '0.3s',
                 '&:hover': { transform: 'translateY(-5px)' }
               }}>
-                {/* This box groups the icon and title together to keep them at the top */}
-                <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <Box sx={{ 
-                    width: 60, height: 60, borderRadius: '50%', bgcolor: `${feature.color}15`, color: feature.color, 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 
-                  }}>
-                    {feature.icon}
-                  </Box>
-                  <Typography variant="h6" fontWeight="bold">{feature.title}</Typography>
+                <Box sx={{ 
+                  width: 60, height: 60, borderRadius: '50%', bgcolor: `${feature.color}15`, color: feature.color, 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 
+                }}>
+                  {feature.icon}
                 </Box>
-                
-                {/* The description pushes to fill any remaining space */}
+                <Typography variant="h6" fontWeight="bold" sx={{ mb: 1, minHeight: 64, display: 'flex', alignItems: 'center' }}>
+                  {feature.title}
+                </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
                   {feature.desc}
                 </Typography>
               </Paper>
-            </Grid>
+            </Box>
           ))}
-        </Grid>
+        </Box>
       </Container>
 
       {/* HOW IT WORKS & CTA SIDE-BY-SIDE */}
