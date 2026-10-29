@@ -1,168 +1,175 @@
-import { Link } from 'react-router-dom';
-import useAuth from './useAuth'; 
+import { Box, Container, Typography, Avatar, Button, Paper, Grid, Stack, Chip, Divider } from '@mui/material';
 import { 
-  Box, Typography, Button, Container, Paper, Stack, Chip 
-} from '@mui/material';
-import { 
-  Gavel, AccountBalanceWallet, Work, Chat, 
-  Security, ArrowForward 
+  GitHub, LinkedIn, Email, Code, Storage, Cloud, 
+  Terminal, Javascript, DeveloperMode, ArrowBack 
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 
-export default function Home() {
-  const { user } = useAuth();
+export default function DeveloperProfile() {
+  const navigate = useNavigate();
 
-  const features = [
-    { title: "Live Bidding System", desc: "Post your budget and let helpers negotiate. Pick the best offer.", icon: <Gavel /> },
-    { title: "Manual Secure Payments", desc: "Pay directly via M-Pesa. Submit the transaction code to verify.", icon: <AccountBalanceWallet /> },
-    { title: "Skill Matching", desc: "Get instantly notified when tasks matching your skills are posted nearby.", icon: <Work /> },
-    { title: "In-App Chat", desc: "Coordinate directly with your helper without sharing personal numbers.", icon: <Chat /> }
+  const techStack = [
+    { label: 'React.js', icon: <Code /> },
+    { label: 'Node.js', icon: <Terminal /> },
+    { label: 'MongoDB', icon: <Storage /> },
+    { label: 'Express.js', icon: <DeveloperMode /> },
+    { label: 'Material-UI', icon: <Javascript /> },
+    { label: 'Socket.IO', icon: <Cloud /> },
   ];
 
   return (
-    <Box sx={{ pb: 10 }}>
+    <Box sx={{ bgcolor: '#f8fafc', minHeight: '100vh', pb: 10 }}>
       
-      {/* HERO SECTION - Clean Solid Blue */}
+      {/* HERO BANNER */}
       <Box sx={{ 
-        bgcolor: '#0f172a', // Very dark slate/blue (modern enterprise look)
+        bgcolor: '#0f172a', 
         color: 'white', 
-        pt: { xs: 10, md: 14 }, 
-        pb: { xs: 10, md: 14 }, 
-        textAlign: 'center',
-        borderBottomLeftRadius: { xs: 30, md: 80 },
-        borderBottomRightRadius: { xs: 30, md: 80 },
+        pt: 8, 
+        pb: 12, 
+        textAlign: 'center'
       }}>
         <Container maxWidth="md">
-          <Chip 
-            label="Trusted by the Community" 
-            icon={<Security style={{ color: '#94a3b8' }} />} 
-            sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: '#e2e8f0', mb: 3, fontWeight: 'bold' }} 
+          <Button 
+            startIcon={<ArrowBack />} 
+            onClick={() => navigate(-1)} 
+            sx={{ color: '#94a3b8', mb: 4, textTransform: 'none', '&:hover': { color: 'white' } }}
+          >
+            Back to App
+          </Button>
+
+          <Avatar 
+            src="https://res.cloudinary.com/ozrcvfms/image/upload/v1792083177/admins/cwoapxllb9npcwljm07m.jpg" 
+            alt="Jacob Kau"
+            sx={{ 
+              width: 150, height: 150, mx: 'auto', mb: 3, 
+              border: '4px solid #1e293b', boxShadow: 3
+            }}
           />
-          <Typography variant="h2" fontWeight="800" gutterBottom sx={{ fontSize: { xs: '2.5rem', md: '4rem' }, letterSpacing: '-1px' }}>
-            Get Help. Give Help. <br />
-            <span style={{ color: '#38bdf8' }}>Earn Money.</span>
+          
+          <Typography variant="h3" fontWeight="800" gutterBottom>
+            Jacob Kau
           </Typography>
-          <Typography variant="h6" sx={{ color: '#94a3b8', mb: 5, maxWidth: 600, mx: 'auto', fontWeight: 400 }}>
-            Witty HandUp is the easiest way to delegate your errands and tasks. 
-            Post a job, receive bids from skilled helpers, and pay securely.
+          <Typography variant="h6" sx={{ color: '#94a3b8', mb: 2, fontWeight: 400 }}>
+            Full-Stack Software Engineer
           </Typography>
           
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
-            {user ? (
-              <Button component={Link} to="/tasks" variant="contained" size="large" 
-                sx={{ bgcolor: '#2563eb', color: 'white', fontWeight: 'bold', '&:hover': { bgcolor: '#1d4ed8' }, px: 4, py: 1.5, textTransform: 'none' }}>
-                Go to Dashboard
-              </Button>
-            ) : (
-              <>
-                <Button component={Link} to="/register" variant="contained" size="large" 
-                  sx={{ bgcolor: '#2563eb', color: 'white', fontWeight: 'bold', '&:hover': { bgcolor: '#1d4ed8' }, px: 4, py: 1.5, textTransform: 'none' }}>
-                  Post a Task
-                </Button>
-                <Button component={Link} to="/register" variant="outlined" size="large" 
-                  endIcon={<ArrowForward />}
-                  sx={{ color: 'white', borderColor: '#475569', '&:hover': { borderColor: '#94a3b8', bgcolor: 'rgba(255,255,255,0.05)' }, px: 4, py: 1.5, textTransform: 'none' }}>
-                  Become a Helper
-                </Button>
-              </>
-            )}
+          <Chip 
+            label="Creator of Witty HandUp System" 
+            sx={{ bgcolor: '#1e293b', color: 'white', fontWeight: 'bold', mb: 4 }} 
+          />
+
+          <Stack direction="row" spacing={2} justifyContent="center">
+            <Button 
+              variant="contained" 
+              startIcon={<GitHub />} 
+              href="https://github.com/jacobkau/HandUp.git" 
+              target="_blank"
+              sx={{ bgcolor: '#2563eb', color: 'white', '&:hover': { bgcolor: '#1d4ed8' }, textTransform: 'none' }}
+            >
+              GitHub Repo
+            </Button>
+            <Button 
+              variant="outlined" 
+              startIcon={<LinkedIn />} 
+              href="https://www.linkedin.com/in/jacob-mwambwa-8b7296362" 
+              target="_blank"
+              sx={{ color: 'white', borderColor: '#475569', '&:hover': { borderColor: '#94a3b8', bgcolor: 'rgba(255,255,255,0.05)' }, textTransform: 'none' }}
+            >
+              LinkedIn
+            </Button>
           </Stack>
         </Container>
       </Box>
 
-      {/* FEATURES SECTION - Clean White Cards */}
-      <Container maxWidth="lg" sx={{ mt: -6 }}>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, justifyContent: 'center' }}>
-          {features.map((feature, index) => (
-            <Box key={index} sx={{ width: { xs: '100%', sm: 'calc(50% - 12px)', md: 'calc(25% - 18px)' }, display: 'flex' }}>
-              <Paper elevation={0} sx={{ 
-                p: 4, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
-                borderRadius: 3, minHeight: 240, border: '1px solid #e2e8f0', // Clean border instead of heavy shadow
-                transition: '0.3s', '&:hover': { transform: 'translateY(-5px)', boxShadow: 3 }
-              }}>
-                <Box sx={{ 
-                  width: 60, height: 60, borderRadius: '50%', bgcolor: '#f1f5f9', color: '#334155', 
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 
-                }}>
-                  {feature.icon}
-                </Box>
-                <Typography variant="h6" fontWeight="bold" sx={{ mb: 1, minHeight: 64, display: 'flex', alignItems: 'center', color: '#1e293b' }}>
-                  {feature.title}
-                </Typography>
-                <Typography variant="body2" sx={{ flexGrow: 1, color: '#64748b' }}>
-                  {feature.desc}
-                </Typography>
-              </Paper>
-            </Box>
-          ))}
-        </Box>
-      </Container>
-
-      {/* HOW IT WORKS & CTA SIDE-BY-SIDE */}
-      <Container maxWidth="lg" sx={{ mt: 12 }}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 6, alignItems: 'stretch' }}>
+      {/* CONTENT SECTION */}
+      <Container maxWidth="lg" sx={{ mt: -8 }}>
+        {/* Tumeanza na Grid container, alignItems="stretch" inahakikisha zote zina urefu sawa */}
+        <Grid container spacing={4} alignItems="stretch">
           
-          {/* Left Side: How It Works */}
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ color: '#1e293b' }}>
-              How It Works
-            </Typography>
-            <Typography variant="subtitle1" sx={{ color: '#64748b', mb: 4 }}>
-              Getting help or earning money takes just a few clicks.
-            </Typography>
+          {/* LEFT COLUMN: About (Takes 7 columns out of 12) */}
+          <Grid item xs={12} md={7} sx={{ display: 'flex' }}>
+            <Paper elevation={0} sx={{ p: 4, borderRadius: 3, width: '100%', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column' }}>
+              <Typography variant="h5" fontWeight="bold" sx={{ color: '#1e293b' }} gutterBottom>
+                About the Developer
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+              <Typography variant="body1" sx={{ color: '#64748b', flexGrow: 1 }} paragraph>
+                Hi, I'm Jacob. I am a passionate full-stack developer dedicated to building tools that solve real-world problems. 
+                Witty HandUp was born out of a desire to create a reliable, community-driven platform that connects people who need help with those willing to offer it, while ensuring both parties are protected.
+              </Typography>
+              <Typography variant="body1" sx={{ color: '#64748b', flexGrow: 1 }} paragraph>
+                I designed and engineered this entire system from the ground up. This includes the RESTful API, the real-time WebSocket architecture for the chat and notifications, the secure wallet escrow logic, and the responsive frontend you are using right now.
+              </Typography>
+              
+              <Typography variant="h6" fontWeight="bold" sx={{ color: '#1e293b', mt: 3 }} gutterBottom>
+                Let's Connect
+              </Typography>
+              <Stack direction="row" spacing={2} alignItems="center" mt={1}>
+                <Email sx={{ color: '#64748b' }} />
+                <Typography variant="body2" component="a" href="mailto:wittyhighbrowtechnologies@gmail.com" sx={{ color: '#2563eb', textDecoration: 'none', fontWeight: 'bold' }}>
+                  wittyhighbrowtechnologies@gmail.com
+                </Typography>
+              </Stack>
+            </Paper>
+          </Grid>
 
-            <Stack spacing={3}>
-              {[
-                { step: "1", title: "Post Your Task", desc: "Describe what you need done, set your budget, and pin your location." },
-                { step: "2", title: "Receive Bids", desc: "Local helpers will review your task and submit their price offers." },
-                { step: "3", title: "Accept & Chat", desc: "Pick the best helper, agree on terms, and coordinate via chat." },
-                { step: "4", title: "Complete & Rate", desc: "Once done, pay via M-Pesa, verify the code, and rate the helper." }
-              ].map((item, index) => (
-                <Stack direction="row" spacing={2} alignItems="flex-start" key={index}>
-                  <Box sx={{ 
-                    width: 40, height: 40, flexShrink: 0, borderRadius: '50%', bgcolor: '#f1f5f9', color: '#0f172a', 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 'bold' 
-                  }}>
-                    {item.step}
+          {/* RIGHT COLUMN: Tech Stack & Stats (Takes 5 columns out of 12) */}
+          <Grid item xs={12} md={5} sx={{ display: 'flex' }}>
+            <Stack spacing={4} sx={{ width: '100%' }}>
+              
+              {/* TECH STACK */}
+              <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px solid #e2e8f0' }}>
+                <Typography variant="h6" fontWeight="bold" sx={{ color: '#1e293b' }} gutterBottom>
+                  Tech Stack Used
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {techStack.map((tech, index) => (
+                    <Chip 
+                      key={index} 
+                      icon={tech.icon} 
+                      label={tech.label} 
+                      variant="outlined" 
+                      size="small"
+                      sx={{ fontWeight: 'bold', bgcolor: '#f8fafc', borderColor: '#cbd5e1', color: '#334155' }}
+                    />
+                  ))}
+                </Box>
+              </Paper>
+
+              {/* APP STATS */}
+              <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#0f172a', color: 'white', border: '1px solid #1e293b' }}>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  System Architecture
+                </Typography>
+                <Divider sx={{ mb: 2, borderColor: '#1e293b' }} />
+                <Stack spacing={1.5}>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography variant="body2" sx={{ color: '#94a3b8' }}>Frontend</Typography>
+                    <Typography variant="body2" fontWeight="bold">React + Vite</Typography>
                   </Box>
-                  <Box>
-                    <Typography variant="subtitle1" fontWeight="bold" sx={{ color: '#1e293b' }}>{item.title}</Typography>
-                    <Typography variant="body2" sx={{ color: '#64748b' }}>{item.desc}</Typography>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography variant="body2" sx={{ color: '#94a3b8' }}>Backend</Typography>
+                    <Typography variant="body2" fontWeight="bold">Node.js + Express</Typography>
+                  </Box>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography variant="body2" sx={{ color: '#94a3b8' }}>Database</Typography>
+                    <Typography variant="body2" fontWeight="bold">MongoDB Atlas</Typography>
+                  </Box>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography variant="body2" sx={{ color: '#94a3b8' }}>Real-time Engine</Typography>
+                    <Typography variant="body2" fontWeight="bold">Socket.IO</Typography>
+                  </Box>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography variant="body2" sx={{ color: '#94a3b8' }}>Hosting</Typography>
+                    <Typography variant="body2" fontWeight="bold">Render + Vercel</Typography>
                   </Box>
                 </Stack>
-              ))}
+              </Paper>
             </Stack>
-          </Box>
-
-          {/* Right Side: CTA Box - Solid Clean Blue */}
-          <Box sx={{ flex: 1, display: 'flex' }}>
-            <Paper elevation={0} sx={{ 
-              p: 5, borderRadius: 4, bgcolor: '#0f172a', color: 'white', 
-              display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: 'center', width: '100%',
-              border: '1px solid #1e293b'
-            }}>
-              <Typography variant="h4" fontWeight="bold" gutterBottom>
-                Ready to get started?
-              </Typography>
-              <Typography variant="body1" sx={{ color: '#94a3b8', mb: 4 }}>
-                Join thousands of users saving time and earning money on Witty HandUp. Create your free account today.
-              </Typography>
-              {!user ? (
-                <Button component={Link} to="/register" variant="contained" size="large" disableElevation 
-                  sx={{ bgcolor: '#2563eb', color: 'white', fontWeight: 'bold', '&:hover': { bgcolor: '#1d4ed8' }, py: 1.5, textTransform: 'none' }}>
-                  Create a Free Account
-                </Button>
-              ) : (
-                <Button component={Link} to="/tasks" variant="contained" size="large" disableElevation 
-                  sx={{ bgcolor: '#2563eb', color: 'white', fontWeight: 'bold', '&:hover': { bgcolor: '#1d4ed8' }, py: 1.5, textTransform: 'none' }}>
-                  Go to Dashboard
-                </Button>
-              )}
-            </Paper>
-          </Box>
-
-        </Box>
+          </Grid>
+        </Grid>
       </Container>
-
     </Box>
   );
 }
