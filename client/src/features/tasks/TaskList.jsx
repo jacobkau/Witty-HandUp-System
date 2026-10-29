@@ -14,7 +14,8 @@ import {
   Paper,
   TextField,
   MenuItem,
-  InputAdornment
+  InputAdornment,
+  Grid
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 import { useLocation } from "react-router-dom";
@@ -37,6 +38,7 @@ export default function TaskList() {
   // Pagination State
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
   useEffect(() => {
     const timerId = setTimeout(() => {
       setDebouncedSearch(searchTerm);
@@ -61,7 +63,7 @@ export default function TaskList() {
       if (tabValue === 2) statusParam = "completed";
 
       // Build endpoint with all filters
-      let endpoint = `/tasks?page=${page}&limit=10&status=${statusParam}`;
+      let endpoint = `/tasks?page=${page}&limit=12&status=${statusParam}`; 
       
       if (user?.role === 'admin') endpoint += "&admin=true";
       if (category !== 'all') endpoint += `&category=${category}`;
@@ -100,7 +102,7 @@ export default function TaskList() {
   };
 
   return (
-    <Box sx={{ maxWidth: 900, mx: "auto", p: { xs: 2, md: 3 } }}>
+    <Box sx={{ maxWidth: 1200, mx: "auto", p: { xs: 2, md: 3 } }}>
       <Typography variant="h4" fontWeight="bold" color="text.primary" gutterBottom>
         {user?.role === 'admin' ? 'All System Tasks (Admin)' : 'Task Dashboard'}
       </Typography>
@@ -130,13 +132,17 @@ export default function TaskList() {
             setCategory(e.target.value);
             setPage(1);
           }}
-          sx={{ minWidth: 150 }}
+          sx={{ minWidth: 160 }}
         >
           <MenuItem value="all">All Categories</MenuItem>
           <MenuItem value="errands">Errands</MenuItem>
           <MenuItem value="repairs">Repairs</MenuItem>
           <MenuItem value="education">Education</MenuItem>
           <MenuItem value="donations">Donations</MenuItem>
+          <MenuItem value="cleaning">Cleaning</MenuItem>
+          <MenuItem value="tech">Tech Support</MenuItem>
+          <MenuItem value="delivery">Delivery</MenuItem>
+          <MenuItem value="events">Events</MenuItem>
           <MenuItem value="other">Other</MenuItem>
         </TextField>
       </Stack>
@@ -162,17 +168,19 @@ export default function TaskList() {
           <CircularProgress />
         </Box>
       ) : tasks.length > 0 ? (
-        <Stack spacing={2}>
+        // GRID LAYOUT: Uses MUI Grid for rows
+        <Grid container spacing={3}>
           {tasks.map((task) => (
-            <TaskCard
-              key={task._id}
-              task={task}
-              onClaim={handleTaskUpdated}
-              onUpdate={handleTaskUpdated}
-              onDelete={handleTaskDeleted}
-            />
+            <Grid item xs={12} sm={6} md={4} key={task._id}>
+              <TaskCard
+                task={task}
+                onClaim={handleTaskUpdated}
+                onUpdate={handleTaskUpdated}
+                onDelete={handleTaskDeleted}
+              />
+            </Grid>
           ))}
-        </Stack>
+        </Grid>
       ) : (
         <Box textAlign="center" py={8}>
           <Typography variant="h6" color="text.secondary" gutterBottom>
