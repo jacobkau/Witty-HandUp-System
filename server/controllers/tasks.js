@@ -1,5 +1,7 @@
 import Task from "../models/Task.js";
 import User from "../models/User.js";
+import Notification from '../models/Notification.js';
+import { sendEmail } from '../utils/sendEmail.js';
 
 // @desc    Get all tasks
 export const getTasks = async (req, res) => {
@@ -11,6 +13,14 @@ export const getTasks = async (req, res) => {
     let query = {};
     if (req.query.status) query.status = req.query.status;
     else query.status = { $ne: "completed" };
+
+    // Filter for "My Tasks" (where user is requester or has bid)
+    if (req.query.mine === 'true') {
+      query.$or = [
+        { requester: req.user.id },
+        { 'bids.helper': req.user.id }
+      ];
+    }
 
     if (req.query.category && req.query.category !== 'all') query.category = req.query.category;
     if (req.query.search) {
@@ -54,11 +64,11 @@ export const createTask = async (req, res) => {
 export const placeBid = async (req, res) => {
   try {
     const { amount, message } = req.body;
-    const task = await Task.findById(req.params.id);
-
+    const task = await Task.findById(req.params.id).populate('requester', 'name email');
+    
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
     if (task.status !== "open") return res.status(400).json({ success: false, error: "Task is no longer open" });
-    if (task.requester.toString() === req.user.id) return res.status(400).json({ success: false, error: "You cannot bid on your own task" });
+    if (task.requester._id.toString() === req.user.id) return res.status(400).json({ success: false, error: "You cannot bid on your own task" });
 
     const existingBid = task.bids.find(b => b.helper.toString() === req.user.id);
     if (existingBid) {
@@ -69,6 +79,28 @@ export const placeBid = async (req, res) => {
     }
 
     await task.save({ validateModifiedOnly: true });
+
+    // Create Notification
+    await Notification.create({
+      recipient: task.requester._id,
+      sender: req.user.id,
+      task: task._id,
+      type: 'new_bid',
+      message: `New bid of KES ${amount} placed on your task "${task.title}".`,
+    });
+
+    // Send Email to Requester
+    try {
+      const bidder = await User.findById(req.user.id);
+      await sendEmail(
+        task.requester.email, 
+        'New Bid Received on Witty HandUp', 
+        `Hello ${task.requester.name},\n\n${bidder.name} has placed a bid of KES ${amount} on your task: "${task.title}".\n\nLog in to view the bid and accept it.\n\nBest regards,\nWitty HandUp Team`
+      );
+    } catch (emailErr) {
+      console.error("Email failed to send:", emailErr);
+    }
+
     const populatedTask = await Task.findById(task._id)
       .populate("requester", "name")
       .populate("bids.helper", "name rating numReviews");
@@ -97,6 +129,28 @@ export const acceptBid = async (req, res) => {
     task.status = "claimed";
     
     await task.save();
+
+    // Create Notification for Helper
+    await Notification.create({
+      recipient: bid.helper,
+      sender: req.user.id,
+      task: task._id,
+      type: 'bid_accepted',
+      message: `Your bid of KES ${bid.amount} was accepted for "${task.title}".`,
+    });
+
+    // Send Email to Helper
+    try {
+      const helper = await User.findById(bid.helper);
+      await sendEmail(
+        helper.email, 
+        'Your Bid Was Accepted! - Witty HandUp', 
+        `Hello ${helper.name},\n\nGreat news! Your bid of KES ${bid.amount} has been accepted for the task: "${task.title}".\n\nPlease log in to coordinate with the requester via chat and complete the task.\n\nBest regards,\nWitty HandUp Team`
+      );
+    } catch (emailErr) {
+      console.error("Email failed to send:", emailErr);
+    }
+
     const populatedTask = await Task.findById(task._id)
       .populate("requester", "name email phone")
       .populate("helper", "name email phone rating numReviews");
