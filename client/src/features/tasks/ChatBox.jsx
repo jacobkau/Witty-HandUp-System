@@ -12,6 +12,9 @@ export default function ChatBox({ taskId }) {
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
 
+  // Bulletproof ID check
+  const currentUserId = user?._id || user?.id;
+
   // Fetch initial message history
   useEffect(() => {
     const fetchMessages = async () => {
@@ -27,6 +30,7 @@ export default function ChatBox({ taskId }) {
     fetchMessages();
   }, [taskId]);
 
+  // Listen for new messages
   useEffect(() => {
     const handleNewMessage = (message) => {
       setMessages((prev) => [...prev, message]);
@@ -39,6 +43,7 @@ export default function ChatBox({ taskId }) {
     };
   }, [taskId]);
 
+  // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -74,9 +79,19 @@ export default function ChatBox({ taskId }) {
           </Typography>
         ) : (
           messages.map((msg) => {
-            const isMe = msg.sender._id === user._id;
+            // Check if the message sender ID matches the current user ID
+            const senderId = msg.sender?._id || msg.sender;
+            const isMe = currentUserId && senderId && currentUserId.toString() === senderId.toString();
+
             return (
-              <Box key={msg._id} sx={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', mb: 1.5 }}>
+              <Box 
+                key={msg._id} 
+                sx={{ 
+                  display: 'flex', 
+                  justifyContent: isMe ? 'flex-end' : 'flex-start', 
+                  mb: 1.5 
+                }}
+              >
                 <Box sx={{
                   maxWidth: '75%',
                   p: 1.5,
@@ -86,10 +101,12 @@ export default function ChatBox({ taskId }) {
                   border: isMe ? 'none' : '1px solid #e0e0e0',
                   borderBottomRightRadius: isMe ? 0 : 2,
                   borderBottomLeftRadius: isMe ? 2 : 0,
+                  boxShadow: 1
                 }}>
+                  {/* Show the sender's name only if it's NOT me */}
                   {!isMe && (
                     <Typography variant="caption" fontWeight="bold" color="text.secondary" display="block" mb={0.5}>
-                      {msg.sender.name} {msg.sender.role === 'admin' && '(Admin)'}
+                      {msg.sender?.name || 'User'} {msg.sender?.role === 'admin' && '(Admin)'}
                     </Typography>
                   )}
                   <Typography variant="body2">{msg.text}</Typography>
