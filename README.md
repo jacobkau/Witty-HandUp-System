@@ -3,7 +3,7 @@
 A community-driven task management platform that connects people who need help with local helpers. Built with the MERN stack, Witty HandUp features a live bidding system, real-time chat, and a unique manual payment verification flow tailored for mobile money (M-Pesa).
 
 ##  Live Demo
-*   **Visit:** [Live system/](https://wittyhandupsystem.vercel.app/)
+*   **Visit:** [Live system](https://wittyhandupsystem.vercel.app/)
 
 ---
 
