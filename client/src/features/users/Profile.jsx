@@ -13,7 +13,9 @@ import {
   AdminPanelSettings as AdminIcon, ArrowBack as ArrowBackIcon, 
   Edit as EditIcon, Save as SaveIcon, Cancel as CancelIcon,
   Visibility, VisibilityOff, Phone as PhoneIcon,
-  Star as StarIcon, StarBorder as StarBorderIcon
+  Star as StarIcon, StarBorder as StarBorderIcon,
+  AccountBalanceWallet as WalletIcon,
+  Work as WorkIcon
 } from '@mui/icons-material';
 
 export default function Profile() {
@@ -24,7 +26,16 @@ export default function Profile() {
   
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '' });
+  
+  // Updated formData to include skills
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    email: '', 
+    phone: '', 
+    password: '',
+    skillsString: '' 
+  });
+  
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
@@ -58,7 +69,8 @@ export default function Profile() {
       name: user.name || '', 
       email: user.email || '', 
       phone: user.phone || '', 
-      password: '' 
+      password: '',
+      skillsString: user.skills ? user.skills.join(', ') : ''
     });
     setIsEditing(true);
   };
@@ -66,8 +78,22 @@ export default function Profile() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const res = await api.put('/auth/me', formData);
-      setUser({ ...user, ...res.data.user }); // Keep existing reviews
+      // Convert the comma-separated skills back to an array
+      const skillsArray = formData.skillsString
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => s !== '');
+
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        skills: skillsArray
+      };
+
+      const res = await api.put('/auth/me', payload);
+      setUser({ ...user, ...res.data.user }); 
       updateUser(res.data.user); 
       setIsEditing(false);
       toast.success('Profile updated successfully!');
@@ -87,7 +113,6 @@ export default function Profile() {
     return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
-  // Helper to render stars based on a rating number
   const renderStars = (rating) => {
     const stars = [];
     const roundedRating = Math.round(rating);
@@ -124,7 +149,6 @@ export default function Profile() {
               </Stack>
               <Typography variant="body1" sx={{ opacity: 0.8, mt: 0.5 }}>Witty HandUp Member</Typography>
               
-              {/* AVERAGE RATING DISPLAY */}
               <Stack direction="row" alignItems="center" spacing={1} mt={1}>
                 {renderStars(user.rating || 0)}
                 <Typography variant="body2" sx={{ opacity: 0.9 }}>
@@ -158,9 +182,17 @@ export default function Profile() {
                 />
 
                 <TextField 
+                  label="Skills (comma separated)" fullWidth value={formData.skillsString} onChange={(e) => setFormData({ ...formData, skillsString: e.target.value })} 
+                  placeholder="e.g., plumbing, tech, cleaning, errands"
+                  helperText="You will get notified when tasks matching these skills are posted"
+                  InputProps={{ startAdornment: <InputAdornment position="start"><WorkIcon color="action" /></InputAdornment> }}
+                />
+
+                <TextField 
                   label="New Password (leave blank to keep current)" type={showPassword ? 'text' : 'password'} fullWidth value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} helperText="Must be at least 6 characters"
                   InputProps={{ endAdornment: <InputAdornment position="end"><IconButton onClick={() => setShowPassword(!showPassword)} edge="end">{showPassword ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment> }}
                 />
+                
                 <Stack direction="row" spacing={2} pt={2}>
                   <Button variant="outlined" color="inherit" fullWidth onClick={() => setIsEditing(false)} disabled={isSaving} startIcon={<CancelIcon />}>Cancel</Button>
                   <Button type="submit" variant="contained" fullWidth disabled={isSaving} startIcon={<SaveIcon />} disableElevation>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
@@ -179,6 +211,7 @@ export default function Profile() {
                   </Stack>
                   <Typography variant="body1">{user.name}</Typography>
                 </Box>
+                
                 <Box>
                   <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
                     <EmailIcon fontSize="small" color="action" />
@@ -193,6 +226,34 @@ export default function Profile() {
                     <Typography variant="caption" fontWeight="bold" color="text.secondary" textTransform="uppercase">Phone Number</Typography>
                   </Stack>
                   <Typography variant="body1">{user.phone || "Not provided"}</Typography>
+                </Box>
+
+                {/* WALLET BALANCE */}
+                <Box>
+                  <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
+                    <WalletIcon fontSize="small" color="action" />
+                    <Typography variant="caption" fontWeight="bold" color="text.secondary" textTransform="uppercase">Wallet Balance</Typography>
+                  </Stack>
+                  <Typography variant="h6" color="success.main" fontWeight="bold">
+                    KES {(user.walletBalance || 0).toLocaleString()}
+                  </Typography>
+                </Box>
+
+                {/* SKILLS DISPLAY */}
+                <Box>
+                  <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
+                    <WorkIcon fontSize="small" color="action" />
+                    <Typography variant="caption" fontWeight="bold" color="text.secondary" textTransform="uppercase">My Skills</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" mt={1}>
+                    {user.skills && user.skills.length > 0 ? (
+                      user.skills.map((skill, index) => (
+                        <Chip key={index} label={skill} size="small" color="primary" variant="outlined" sx={{ textTransform: 'capitalize' }} />
+                      ))
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">No skills added yet.</Typography>
+                    )}
+                  </Stack>
                 </Box>
 
                 <Box>
@@ -217,7 +278,7 @@ export default function Profile() {
                           <Typography variant="subtitle2" fontWeight="bold">
                             {review.requester?.name || "A user"} rated you
                           </Typography>
-                          {renderStars(5)} {/* We assume a 5-star rating for now, or you can add the specific rating to the task model */}
+                          {renderStars(review.ratingValue || 5)} 
                         </Stack>
                         <Typography variant="body2" color="text.secondary">
                           For the task: <strong>"{review.title}"</strong>
