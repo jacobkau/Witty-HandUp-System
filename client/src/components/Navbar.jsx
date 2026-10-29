@@ -72,7 +72,7 @@ export default function Navbar() {
 
               <div className="flex items-center space-x-3 pl-4 border-l border-gray-200">
                 <span className="text-gray-700 text-sm font-medium">
-                  Hello, {user.name} {user.role === 'admin' && '👑'}
+                  Hello, {user.name} {user.role === 'admin'}
                 </span>
                 <button onClick={logout} className="px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
                   Logout
@@ -108,7 +108,7 @@ export default function Navbar() {
             <>
               <div className="px-4 py-2 border-b border-gray-100 mb-2">
                 <p className="text-sm text-gray-500">Logged in as</p>
-                <p className="font-bold text-gray-800">{user.name} {user.role === 'admin' && '👑'}</p>
+                <p className="font-bold text-gray-800">{user.name} {user.role === 'admin'}</p>
               </div>
               <Link to="/tasks" onClick={closeMenu} className={getMobileTabClass('/tasks')}>Dashboard</Link>
               <Link to="/tasks/new" onClick={closeMenu} className="block w-full text-center px-4 py-3 rounded-md text-base font-medium text-white bg-green-600 hover:bg-green-700 transition-colors">
