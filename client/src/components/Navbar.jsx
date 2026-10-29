@@ -5,7 +5,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import { Badge, IconButton } from '@mui/material';
-import api from "../../lib/api"; 
+import api from "../lib/api"; // ✅ FIXED IMPORT PATH
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -27,7 +27,7 @@ export default function Navbar() {
       };
       checkNotifs();
     }
-  }, [user, location.pathname]); 
+  }, [user, location.pathname]); // Re-fetch on page change
 
   const getTabClass = (path) => {
     const isActive = location.pathname === path;
@@ -71,6 +71,7 @@ export default function Navbar() {
               </div>
 
               <div className="flex items-center space-x-4 pl-4 border-l border-gray-200">
+                {/* BELL ICON */}
                 <IconButton component={Link} to="/notifications" size="small">
                   <Badge badgeContent={unreadCount} color="error">
                     <NotificationsIcon sx={{ color: '#64748b' }} />
