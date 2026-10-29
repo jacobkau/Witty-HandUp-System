@@ -67,7 +67,7 @@ export default function DeveloperProfile() {
             <Button 
               variant="contained" 
               startIcon={<GitHub />} 
-              href="https://github.com/jacobkau/HandUp.git" 
+              href="https://github.com/jacobkau/Witty-HandUp-System" 
               target="_blank"
               sx={{ bgcolor: 'white', color: 'primary.main', '&:hover': { bgcolor: 'grey.100' } }}
             >
