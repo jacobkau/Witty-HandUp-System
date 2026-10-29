@@ -17,7 +17,10 @@ const taskSchema = new mongoose.Schema({
   },
   status: { type: String, enum: ['open', 'claimed', 'completed'], default: 'open' },
   isUrgent: { type: Boolean, default: false },
-  price: { type: Number, required: true, min: 0 },
+  
+  // Default set to 0 to protect older tasks
+  price: { type: Number, required: true, min: 0, default: 0 }, 
+  
   location: {
     type: { type: String, enum: ['Point'], required: true },
     coordinates: { type: [Number], required: true, index: '2dsphere' },
