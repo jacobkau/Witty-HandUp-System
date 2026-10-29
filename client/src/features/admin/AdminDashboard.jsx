@@ -20,7 +20,7 @@ export default function DeveloperProfile() {
   return (
     <Box sx={{ bgcolor: '#f8fafc', minHeight: '100vh', pb: 10 }}>
       
-      {/* HERO BANNER - Solid Dark Color */}
+      {/* HERO BANNER */}
       <Box sx={{ 
         bgcolor: '#0f172a', 
         color: 'white', 
@@ -83,15 +83,16 @@ export default function DeveloperProfile() {
 
       {/* CONTENT SECTION */}
       <Container maxWidth="lg" sx={{ mt: -8 }}>
+        {/* HAPA NDO PAMEBAADILISHWA: Tumeacha MUI Grid tukatumia Flexbox safi */}
         <Box sx={{ 
           display: 'flex', 
-          flexDirection: { xs: 'column', md: 'row' }, 
+          flexDirection: { xs: 'column', md: 'row' }, // Stack on mobile, row on desktop
           gap: 4, 
           alignItems: 'stretch' 
         }}>
           
           {/* LEFT COLUMN: About */}
-          <Box sx={{ flex: 1.5 }}> {/* Takes up a bit more space than the right column */}
+          <Box sx={{ width: { xs: '100%', md: '55%' } }}>
             <Paper elevation={0} sx={{ p: 4, borderRadius: 3, height: '100%', border: '1px solid #e2e8f0' }}>
               <Typography variant="h5" fontWeight="bold" sx={{ color: '#1e293b' }} gutterBottom>
                 About the Developer
@@ -118,7 +119,7 @@ export default function DeveloperProfile() {
           </Box>
 
           {/* RIGHT COLUMN: Tech Stack & Stats */}
-          <Box sx={{ flex: 1 }}>
+          <Box sx={{ width: { xs: '100%', md: '45%' } }}>
             <Stack spacing={4}>
               
               {/* TECH STACK */}
