@@ -7,7 +7,6 @@ const notificationSchema = new mongoose.Schema({
   type: { type: String, enum: ['new_bid', 'bid_accepted', 'payment_submitted', 'payment_confirmed'], required: true },
   message: { type: String, required: true },
   isRead: { type: Boolean, default: false },
-  link: { type: String } 
 }, { timestamps: true });
 
 export default mongoose.model('Notification', notificationSchema);
