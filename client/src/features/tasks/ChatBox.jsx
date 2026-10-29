@@ -67,10 +67,7 @@ export default function ChatBox({ taskId }) {
 
   return (
     <Paper variant="outlined" sx={{ mt: 2, p: 2, bgcolor: 'grey.50', maxHeight: 400, display: 'flex', flexDirection: 'column' }}>
-      <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-        Task Chat
-      </Typography>
-      
+         
       {/* Message List */}
       <Box sx={{ flexGrow: 1, overflowY: 'auto', mb: 2, p: 1, minHeight: '150px' }}>
         {messages.length === 0 ? (
