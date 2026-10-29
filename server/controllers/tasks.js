@@ -173,10 +173,14 @@ export const completeTask = async (req, res) => {
 
     await task.save();
 
-    const io = getIO();
-    io.emit("task-completed", task);
+    const populatedTask = await Task.findById(task._id)
+      .populate("requester", "name email phone")
+      .populate("helper", "name email phone rating numReviews");
 
-    res.status(200).json({ success: true, data: task });
+    const io = getIO();
+    io.emit("task-completed", populatedTask);
+
+    res.status(200).json({ success: true, data: populatedTask });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -206,7 +210,12 @@ export const rateTask = async (req, res) => {
     task.ratingValue = rating;
     await task.save();
 
-    res.status(200).json({ success: true, message: "Rating submitted successfully" });
+    // Return the fully populated task so the frontend updates immediately
+    const populatedTask = await Task.findById(task._id)
+      .populate("requester", "name email phone rating numReviews")
+      .populate("helper", "name email phone rating numReviews");
+
+    res.status(200).json({ success: true, message: "Rating submitted successfully", data: populatedTask });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
