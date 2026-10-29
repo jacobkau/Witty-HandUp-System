@@ -28,6 +28,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
   const currentUserId = user?._id || user?.id;
   const isCreator = currentUserId === task?.requester?._id;
   const isHelper = currentUserId === task?.helper?._id;
+  const isAdmin = user?.role === 'admin'; // ✅ Ensure Admin check is here
   const hasBid = task?.bids?.find(b => b.helper?._id === currentUserId);
 
   const lng = task?.location?.coordinates?.[0] || 0;
@@ -90,7 +91,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
       height: '100%', 
       display: 'flex', 
       flexDirection: 'column',
-      border: task.isUrgent ? '2px solid #d32f2f' : '1px solid #e0e0e0',
+      border: task.isUrgent ? '2px solid #d32f2f' : (isAdmin ? '2px dashed #9c27b0' : '1px solid #e0e0e0'), 
       boxShadow: 1,
       borderRadius: 2,
       '&:hover': { boxShadow: 3 }
@@ -124,8 +125,8 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           <Chip icon={<AccessTime fontSize="small" />} label={new Date(task.createdAt).toLocaleDateString()} size="small" />
         </Stack>
 
-        {/* EDIT/DELETE (Creator Only) */}
-        {isCreator && (
+        {/* EDIT/DELETE (Creator OR Admin) */}
+        {(isCreator || isAdmin) && (
           <Stack direction="row" spacing={1} justifyContent="flex-end" mb={1}>
             <Tooltip title="Edit Task">
               <IconButton size="small" onClick={() => navigate(`/tasks/edit/${task._id}`, { state: { taskData: task } })} disabled={task.status !== 'open'}>
@@ -302,7 +303,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
             {/* ACTION BUTTONS (Bottom) */}
             <Stack spacing={1.5}>
               {/* Chat Button (Only if claimed/completed) */}
-              {(isCreator || isHelper) && (
+              {(isCreator || isHelper || isAdmin) && (
                 <Button 
                   variant="outlined" color="primary" size="medium" startIcon={<ChatIcon />} 
                   onClick={() => setChatOpen(true)} fullWidth sx={{ textTransform: 'none' }}
