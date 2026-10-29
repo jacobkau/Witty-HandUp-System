@@ -1,7 +1,7 @@
 import Task from "../models/Task.js";
 import User from "../models/User.js";
-import { getIO } from "../sockets/socket.js";
 
+// @desc    Get all tasks
 export const getTasks = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -35,6 +35,7 @@ export const getTasks = async (req, res) => {
   }
 };
 
+// @desc    Create a task
 export const createTask = async (req, res) => {
   const { title, description, category, location, deadline, price, isUrgent } = req.body;
   try {
@@ -49,6 +50,7 @@ export const createTask = async (req, res) => {
   }
 };
 
+// @desc    Place a bid
 export const placeBid = async (req, res) => {
   try {
     const { amount, message } = req.body;
@@ -77,6 +79,7 @@ export const placeBid = async (req, res) => {
   }
 };
 
+// @desc    Accept a bid
 export const acceptBid = async (req, res) => {
   try {
     const { bidId } = req.body;
@@ -104,6 +107,7 @@ export const acceptBid = async (req, res) => {
   }
 };
 
+// @desc    Submit Payment Code
 export const submitPayment = async (req, res) => {
   try {
     const { paymentCode } = req.body;
@@ -123,6 +127,7 @@ export const submitPayment = async (req, res) => {
   }
 };
 
+// @desc    Confirm Payment
 export const confirmPayment = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
@@ -140,6 +145,7 @@ export const confirmPayment = async (req, res) => {
   }
 };
 
+// @desc    Rate Task
 export const rateTask = async (req, res) => {
   try {
     const { rating } = req.body;
@@ -159,6 +165,69 @@ export const rateTask = async (req, res) => {
     await task.save();
 
     res.status(200).json({ success: true, message: "Rating submitted" });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// @desc    Update Task 
+export const updateTask = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ success: false, error: "Task not found" });
+    
+    const isOwner = task.requester.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ success: false, error: "Not authorized to update this task" });
+    }
+
+    if (task.status !== "open") return res.status(400).json({ success: false, error: "Only open tasks can be updated" });
+
+    const { title, description, category, location, deadline, price, isUrgent } = req.body;
+    task.title = title || task.title;
+    task.description = description || task.description;
+    task.category = category || task.category;
+    task.location = location || task.location;
+    task.deadline = deadline || task.deadline;
+    task.price = price !== undefined ? price : task.price;
+    task.isUrgent = isUrgent !== undefined ? isUrgent : task.isUrgent;
+
+    await task.save();
+    res.status(200).json({ success: true, data: task });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// @desc    Delete Task
+export const deleteTask = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ success: false, error: "Task not found" });
+
+    const isOwner = task.requester.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ success: false, error: "Not authorized to delete this task" });
+    }
+
+    await task.deleteOne();
+    res.status(200).json({ success: true, data: {} });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// @desc    Get My Tasks
+export const getMyTasks = async (req, res) => {
+  try {
+    const tasks = await Task.find({ $or: [{ requester: req.user.id }, { helper: req.user.id }] })
+      .populate("requester", "name email")
+      .populate("helper", "name email");
+    res.status(200).json({ success: true, count: tasks.length, data: tasks });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
