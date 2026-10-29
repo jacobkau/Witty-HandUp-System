@@ -3,8 +3,7 @@
 A community-driven task management platform that connects people who need help with local helpers. Built with the MERN stack, Witty HandUp features a live bidding system, real-time chat, and a unique manual payment verification flow tailored for mobile money (M-Pesa).
 
 ##  Live Demo
-*   **Frontend:** [https://wittyhandupsystem.vercel.app/](https://wittyhandupsystem.vercel.app/)
-*   **Backend API:** [https://handup.onrender.com](https://handup.onrender.com)
+*   **Visit:** [Live system/](https://wittyhandupsystem.vercel.app/)
 
 ---
 
@@ -149,7 +148,7 @@ npm run dev
 
 ## Developer
 
-**Jacob Kau**  
+**Jacob Mwambwa**  
 *Full-Stack Software Engineer*
 
 I designed and engineered this entire system from the ground up, including the RESTful API, real-time WebSocket architecture, secure state management, and responsive frontend.
