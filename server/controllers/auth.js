@@ -210,12 +210,11 @@ export const getMe = async (req, res) => {
       return res.status(401).json({ success: false, error: 'Not authorized' });
     }
 
-    // Fetch reviews: Tasks where this user was the helper AND it was rated
     const reviews = await Task.find({
       helper: req.user._id,
       isRated: true
     })
-    .populate('requester', 'name') 
+    .populate('requester', 'name')
     .select('title requester ratingValue createdAt updatedAt')
     .sort({ updatedAt: -1 });
 
@@ -233,7 +232,7 @@ export const getMe = async (req, res) => {
         numReviews: req.user.numReviews || 0,
         createdAt: req.user.createdAt,
         updatedAt: req.user.updatedAt,
-        reviews: reviews 
+        reviews: reviews
       },
     });
   } catch (err) {
