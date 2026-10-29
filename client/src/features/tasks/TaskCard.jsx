@@ -8,7 +8,8 @@ import {
 } from "@mui/material";
 import { 
   LocationOn, AccessTime, Star, Gavel, 
-  Phone, Delete, Edit, Directions, Map as MapIcon 
+  Phone, Delete, Edit, Directions, Map as MapIcon,
+  Chat as ChatIcon, Close as CloseIcon
 } from "@mui/icons-material";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -22,6 +23,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
   const [error, setError] = useState(null);
   const [showMap, setShowMap] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false); 
 
   const currentUserId = user?._id || user?.id;
   const isCreator = currentUserId === task?.requester?._id;
@@ -205,7 +207,6 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
                         <Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>{b.helper?.name?.charAt(0)}</Avatar>
                         <Box>
                           <Typography variant="body2" fontWeight="medium">{b.helper?.name}</Typography>
-                          {/* SHOW RATING IN BIDS */}
                           {b.helper?.numReviews > 0 && (
                             <Stack direction="row" alignItems="center" spacing={0.5}>
                               <Star style={{ color: '#fbbf24', fontSize: 12 }} />
@@ -254,33 +255,47 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           </Box>
         )}
 
-        {/* CLAIMED OR COMPLETED STATE: SHOW HELPER INFO & RATING */}
+        {/* CLAIMED OR COMPLETED STATE */}
         {(task.status === 'claimed' || task.status === 'completed') && task.helper && (
           <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #f0f0f0' }}>
-            <Stack direction="row" spacing={1} alignItems="center" mb={2}>
-              <Avatar sx={{ width: 32, height: 32, bgcolor: 'info.main' }}>{task.helper?.name?.charAt(0)}</Avatar>
-              <Box>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <Typography variant="body2" fontWeight="bold">Helper: {task.helper?.name}</Typography>
-                  
-                  {/* SHOW RATING BADGE NEXT TO HELPER'S NAME */}
-                  {task.helper?.numReviews > 0 && (
-                    <Chip 
-                      icon={<Star style={{ color: '#fbbf24', fontSize: 14 }} />}
-                      label={`${task.helper.rating.toFixed(1)} (${task.helper.numReviews})`} 
-                      size="small" 
-                      variant="outlined"
-                      sx={{ height: 20, fontSize: '0.75rem', borderColor: '#fbbf24', color: 'text.secondary' }}
-                    />
+            <Stack direction="row" spacing={1} alignItems="center" mb={2} justifyContent="space-between">
+              
+              {/* Helper Info */}
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Avatar sx={{ width: 32, height: 32, bgcolor: 'info.main' }}>{task.helper?.name?.charAt(0)}</Avatar>
+                <Box>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography variant="body2" fontWeight="bold">Helper: {task.helper?.name}</Typography>
+                    {task.helper?.numReviews > 0 && (
+                      <Chip 
+                        icon={<Star style={{ color: '#fbbf24', fontSize: 14 }} />}
+                        label={`${task.helper.rating.toFixed(1)}`} 
+                        size="small" 
+                        variant="outlined"
+                        sx={{ height: 20, fontSize: '0.75rem', borderColor: '#fbbf24', color: 'text.secondary' }}
+                      />
+                    )}
+                  </Stack>
+                  {task.helper?.phone && (
+                    <Typography variant="caption" component="a" href={`tel:${task.helper.phone}`} sx={{ color: 'primary.main', textDecoration: 'none' }}>
+                      {task.helper.phone}
+                    </Typography>
                   )}
-                </Stack>
-                
-                {task.helper?.phone && (
-                  <Typography variant="caption" component="a" href={`tel:${task.helper.phone}`} sx={{ color: 'primary.main', textDecoration: 'none' }}>
-                    {task.helper.phone}
-                  </Typography>
-                )}
-              </Box>
+                </Box>
+              </Stack>
+
+              {/* CHAT BUTTON */}
+              {(isCreator || isHelper) && (
+                <Button 
+                  variant="outlined" 
+                  color="primary" 
+                  size="small" 
+                  startIcon={<ChatIcon />} 
+                  onClick={() => setChatOpen(true)}
+                >
+                  Message
+                </Button>
+              )}
             </Stack>
 
             {isHelper && task.status === 'claimed' && (
@@ -300,17 +315,35 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
             )}
           </Box>
         )}
-
-        {task.status !== 'open' && (isCreator || isHelper) && (
-          <Box mt={2}>
-            <ChatBox taskId={task._id} />
-          </Box>
-        )}
         
         {error && <Typography color="error" variant="caption" mt={1} display="block">{error}</Typography>}
       
       </CardContent>
 
+      {/* CHAT MODAL */}
+      <Dialog 
+        open={chatOpen} 
+        onClose={() => setChatOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{ sx: { height: '80vh', display: 'flex', flexDirection: 'column' } }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <ChatIcon color="primary" />
+            <Typography variant="h6" fontWeight="bold">Task Messages</Typography>
+          </Stack>
+          <IconButton onClick={() => setChatOpen(false)} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <Divider />
+        <DialogContent sx={{ p: 0, flexGrow: 1, bgcolor: '#f9f9f9' }}>
+          <ChatBox taskId={task._id} />
+        </DialogContent>
+      </Dialog>
+
+      {/* DELETE CONFIRMATION MODAL */}
       <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
