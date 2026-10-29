@@ -19,7 +19,7 @@ export default function Navbar() {
     }`;
   };
 
-  // Helper for mobile links (takes up full width)
+  // Helper for mobile links
   const getMobileTabClass = (path) => {
     const isActive = location.pathname === path;
     return `block px-4 py-3 rounded-md text-base font-medium transition-colors ${
@@ -32,7 +32,8 @@ export default function Navbar() {
   const closeMenu = () => setIsMobileMenuOpen(false);
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-100 relative z-50">
+    // FIXED AT TOP with Glassmorphism effect
+    <nav className="fixed top-0 left-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         
         {/* Logo */}
@@ -42,12 +43,12 @@ export default function Navbar() {
             alt="Witty HandUp logo"
             className="h-8 w-auto object-contain"
           />
-          <span className="text-xl font-bold text-blue-600">
+          <span className="text-xl font-bold text-blue-600 tracking-tight">
             Witty HandUp
           </span>
         </Link>
 
-        {/* DESKTOP NAVIGATION (Hidden on small screens) */}
+        {/* DESKTOP NAVIGATION */}
         <div className="hidden md:flex items-center space-x-4">
           {!user ? (
             <div className="flex items-center space-x-2">
@@ -70,7 +71,7 @@ export default function Navbar() {
                 )}
               </div>
 
-              <div className="flex items-center space-x-3 pl-4 border-l border-gray-200">
+              <div className="flex items-center space-x-4 pl-4 border-l border-gray-200">
                 <span className="text-gray-700 text-sm font-medium">
                   Hello, {user.name} {user.role === 'admin'}
                 </span>
@@ -82,7 +83,7 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* MOBILE HAMBURGER BUTTON (Visible only on small screens) */}
+        {/* MOBILE HAMBURGER BUTTON */}
         <div className="md:hidden flex items-center">
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
