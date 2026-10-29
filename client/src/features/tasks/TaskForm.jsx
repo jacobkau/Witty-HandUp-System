@@ -51,11 +51,18 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
 
     setIsSubmitting(true);
     try {
+    
+      const payload = {
+        ...formData,
+        price: Number(formData.price) || 0,
+        isUrgent: formData.isUrgent || false
+      };
+
       if (onSubmit) {
-        await onSubmit(formData);
+        await onSubmit(payload);
         if (isEdit) setSuccess(true); 
       } else {
-        await api.post('/tasks', formData);
+        await api.post('/tasks', payload);
         setSuccess(true);
         setTimeout(() => navigate('/tasks'), 1500);
       }
@@ -109,8 +116,16 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
           <TextField label="Task Title" fullWidth required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} />
           <TextField label="Description" fullWidth multiline rows={3} required value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
 
-          <Stack direction="row" spacing={3}>
-            <TextField label="Budget (KES)" type="number" fullWidth required value={formData.price} onChange={(e) => setFormData({...formData, price: Number(e.target.value)})} helperText="Enter 0 if offering for free" />
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
+            <TextField 
+              label="Starting Budget (KES)" 
+              type="number" 
+              fullWidth 
+              required 
+              value={formData.price} 
+              onChange={(e) => setFormData({...formData, price: Number(e.target.value)})} 
+              helperText="Enter 0 if offering for free" 
+            />
             
             <FormControl fullWidth>
               <InputLabel>Category</InputLabel>
@@ -135,7 +150,7 @@ export default function TaskForm({ initialValues = null, onSubmit, onCancel, isE
             
             <FormControlLabel
               control={<Switch checked={formData.isUrgent} onChange={(e) => setFormData({...formData, isUrgent: e.target.checked})} color="error" />}
-              label="Mark as Urgent (Max 2 active)"
+              label="Mark as Urgent"
             />
           </Stack>
 
