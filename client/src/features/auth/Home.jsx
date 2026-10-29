@@ -89,35 +89,35 @@ export default function Home() {
       </Container>
 
       {/* HOW IT WORKS & CTA SIDE-BY-SIDE */}
-      <Container maxWidth="lg" sx={{ mt: 12 }}>
-        <Grid container spacing={6} alignItems="stretch">
+      <Container maxWidth="md" sx={{ mt: 12 }}>
+        <Grid container spacing={6} alignItems="center">
           
           {/* Left Side: How It Works */}
-          <Grid item xs={12} md={7}>
-            <Typography variant="h3" fontWeight="bold" gutterBottom>
+          <Grid item xs={12} md={6}>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
               How It Works
             </Typography>
             <Typography variant="subtitle1" color="text.secondary" mb={4}>
               Getting help or earning money takes just a few clicks.
             </Typography>
 
-            <Stack spacing={4}>
+            <Stack spacing={3}>
               {[
-                { step: "1", title: "Post Your Task", desc: "Describe what you need done, set your budget, and pin your location on the map." },
+                { step: "1", title: "Post Your Task", desc: "Describe what you need done, set your budget, and pin your location." },
                 { step: "2", title: "Receive Bids", desc: "Local helpers will review your task and submit their price offers." },
-                { step: "3", title: "Accept & Chat", desc: "Pick the best helper, pay into escrow, and coordinate via our built-in chat." },
-                { step: "4", title: "Complete & Rate", desc: "Once the task is done, the money is released, and you can rate the helper." }
+                { step: "3", title: "Accept & Chat", desc: "Pick the best helper, pay into escrow, and coordinate via chat." },
+                { step: "4", title: "Complete & Rate", desc: "Once done, money is released, and you can rate the helper." }
               ].map((item, index) => (
-                <Stack direction="row" spacing={3} alignItems="flex-start" key={index}>
+                <Stack direction="row" spacing={2} alignItems="flex-start" key={index}>
                   <Box sx={{ 
-                    width: 45, height: 45, flexShrink: 0, borderRadius: '50%', bgcolor: 'primary.main', color: 'white', 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', fontWeight: 'bold' 
+                    width: 40, height: 40, flexShrink: 0, borderRadius: '50%', bgcolor: 'primary.main', color: 'white', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 'bold' 
                   }}>
                     {item.step}
                   </Box>
                   <Box>
-                    <Typography variant="h6" fontWeight="bold">{item.title}</Typography>
-                    <Typography variant="body1" color="text.secondary">{item.desc}</Typography>
+                    <Typography variant="subtitle1" fontWeight="bold">{item.title}</Typography>
+                    <Typography variant="body2" color="text.secondary">{item.desc}</Typography>
                   </Box>
                 </Stack>
               ))}
@@ -125,9 +125,8 @@ export default function Home() {
           </Grid>
 
           {/* Right Side: CTA Box */}
-          <Grid item xs={12} md={5}>
+          <Grid item xs={12} md={6}>
             <Paper elevation={0} sx={{ 
-              height: '100%', 
               p: 5, 
               borderRadius: 4, 
               backgroundImage: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
