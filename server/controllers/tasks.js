@@ -11,22 +11,41 @@ export const getTasks = async (req, res) => {
     const skip = (page - 1) * limit;
 
     let query = {};
-    if (req.query.status) query.status = req.query.status;
-    else query.status = { $ne: "completed" };
-
-    // Filter for "My Tasks" (where user is requester or has bid)
-    if (req.query.mine === 'true') {
-      query.$or = [
-        { requester: req.user.id },
-        { 'bids.helper': req.user.id }
-      ];
+    
+    // Status filter
+    if (req.query.status) {
+      query.status = req.query.status;
+    } else {
+      query.status = { $ne: "completed" };
     }
 
-    if (req.query.category && req.query.category !== 'all') query.category = req.query.category;
+    // Category filter
+    if (req.query.category && req.query.category !== 'all') {
+      query.category = req.query.category;
+    }
+
+    // Search filter
     if (req.query.search) {
       query.$or = [
         { title: { $regex: req.query.search, $options: 'i' } }, 
         { description: { $regex: req.query.search, $options: 'i' } }
+      ];
+    }
+
+    // MINE filter
+    if (req.query.mine === 'true') {
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({ success: false, error: "You must be logged in" });
+      }
+      
+      query.$and = [
+        { 
+          $or: [
+            { requester: req.user.id }, 
+            { 'bids.helper': req.user.id },
+            { helper: req.user.id }
+          ] 
+        }
       ];
     }
 
@@ -41,6 +60,7 @@ export const getTasks = async (req, res) => {
 
     res.status(200).json({ success: true, total, totalPages: Math.ceil(total / limit), currentPage: page, data: tasks });
   } catch (err) {
+    console.error("Get Tasks Error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 };
@@ -80,7 +100,6 @@ export const placeBid = async (req, res) => {
 
     await task.save({ validateModifiedOnly: true });
 
-    // Create Notification
     await Notification.create({
       recipient: task.requester._id,
       sender: req.user.id,
@@ -89,7 +108,6 @@ export const placeBid = async (req, res) => {
       message: `New bid of KES ${amount} placed on your task "${task.title}".`,
     });
 
-    // Send Email to Requester
     try {
       const bidder = await User.findById(req.user.id);
       await sendEmail(
@@ -102,7 +120,7 @@ export const placeBid = async (req, res) => {
     }
 
     const populatedTask = await Task.findById(task._id)
-      .populate("requester", "name")
+      .populate("requester", "name email phone rating numReviews")
       .populate("bids.helper", "name rating numReviews");
 
     res.status(200).json({ success: true, data: populatedTask });
@@ -110,31 +128,7 @@ export const placeBid = async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 };
-// @desc    Helper marks work as completed
-export const markWorkCompleted = async (req, res) => {
-  try {
-    const task = await Task.findById(req.params.id);
-    if (!task) return res.status(404).json({ success: false, error: "Task not found" });
-    if (task.helper.toString() !== req.user.id) return res.status(403).json({ success: false, error: "Only the helper can mark work as done" });
-    if (task.status !== "claimed") return res.status(400).json({ success: false, error: "Task is not in claimed state" });
 
-    task.status = "work_completed";
-    await task.save();
-
-    // Notify Requester
-    await Notification.create({
-      recipient: task.requester,
-      sender: req.user.id,
-      task: task._id,
-      type: 'payment_submitted',
-      message: `The helper has completed the work for "${task.title}". Please pay to proceed.`,
-    });
-
-    res.status(200).json({ success: true, data: task });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-};
 // @desc    Accept a bid
 export const acceptBid = async (req, res) => {
   try {
@@ -154,7 +148,6 @@ export const acceptBid = async (req, res) => {
     
     await task.save();
 
-    // Create Notification for Helper
     await Notification.create({
       recipient: bid.helper,
       sender: req.user.id,
@@ -163,7 +156,6 @@ export const acceptBid = async (req, res) => {
       message: `Your bid of KES ${bid.amount} was accepted for "${task.title}".`,
     });
 
-    // Send Email to Helper
     try {
       const helper = await User.findById(bid.helper);
       await sendEmail(
@@ -185,6 +177,37 @@ export const acceptBid = async (req, res) => {
   }
 };
 
+// @desc    Helper marks work as completed
+export const markWorkCompleted = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    
+    if (!task) return res.status(404).json({ success: false, error: "Task not found" });
+    if (!task.helper || task.helper.toString() !== req.user.id) return res.status(403).json({ success: false, error: "Only the helper can mark work as done" });
+    if (task.status !== "claimed") return res.status(400).json({ success: false, error: "Task is not in claimed state" });
+
+    task.status = "work_completed";
+    await task.save();
+
+    await Notification.create({
+      recipient: task.requester,
+      sender: req.user.id,
+      task: task._id,
+      type: 'payment_submitted',
+      message: `The helper has completed the work for "${task.title}". Please pay to proceed.`,
+    });
+
+    const populatedTask = await Task.findById(task._id)
+      .populate("requester", "name email phone rating numReviews")
+      .populate("helper", "name email phone rating numReviews")
+      .populate("bids.helper", "name rating numReviews");
+
+    res.status(200).json({ success: true, data: populatedTask });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 // @desc    Submit Payment Code
 export const submitPayment = async (req, res) => {
   try {
@@ -193,13 +216,18 @@ export const submitPayment = async (req, res) => {
 
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
     if (task.requester.toString() !== req.user.id) return res.status(403).json({ success: false, error: "Only the creator can submit payment" });
-    if (task.status !== "claimed") return res.status(400).json({ success: false, error: "Task must be claimed first" });
+    if (task.status !== "work_completed") return res.status(400).json({ success: false, error: "Helper must mark work as done first" });
 
     task.paymentCode = paymentCode;
     task.status = "awaiting_verification"; 
     await task.save();
 
-    res.status(200).json({ success: true, data: task });
+    const populatedTask = await Task.findById(task._id)
+      .populate("requester", "name email phone rating numReviews")
+      .populate("helper", "name email phone rating numReviews")
+      .populate("bids.helper", "name rating numReviews");
+
+    res.status(200).json({ success: true, data: populatedTask });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -217,7 +245,12 @@ export const confirmPayment = async (req, res) => {
     task.isPaid = true;
     await task.save();
 
-    res.status(200).json({ success: true, data: task });
+    const populatedTask = await Task.findById(task._id)
+      .populate("requester", "name email phone rating numReviews")
+      .populate("helper", "name email phone rating numReviews")
+      .populate("bids.helper", "name rating numReviews");
+
+    res.status(200).json({ success: true, data: populatedTask });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
