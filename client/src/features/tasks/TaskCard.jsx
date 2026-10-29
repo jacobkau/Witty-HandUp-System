@@ -205,6 +205,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
                         <Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>{b.helper?.name?.charAt(0)}</Avatar>
                         <Box>
                           <Typography variant="body2" fontWeight="medium">{b.helper?.name}</Typography>
+                          {/* SHOW RATING IN BIDS */}
                           {b.helper?.numReviews > 0 && (
                             <Stack direction="row" alignItems="center" spacing={0.5}>
                               <Star style={{ color: '#fbbf24', fontSize: 12 }} />
@@ -253,12 +254,27 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           </Box>
         )}
 
-        {task.status === 'claimed' && (
+        {/* CLAIMED OR COMPLETED STATE: SHOW HELPER INFO & RATING */}
+        {(task.status === 'claimed' || task.status === 'completed') && task.helper && (
           <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #f0f0f0' }}>
             <Stack direction="row" spacing={1} alignItems="center" mb={2}>
               <Avatar sx={{ width: 32, height: 32, bgcolor: 'info.main' }}>{task.helper?.name?.charAt(0)}</Avatar>
               <Box>
-                <Typography variant="body2" fontWeight="bold">Helper: {task.helper?.name}</Typography>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Typography variant="body2" fontWeight="bold">Helper: {task.helper?.name}</Typography>
+                  
+                  {/* SHOW RATING BADGE NEXT TO HELPER'S NAME */}
+                  {task.helper?.numReviews > 0 && (
+                    <Chip 
+                      icon={<Star style={{ color: '#fbbf24', fontSize: 14 }} />}
+                      label={`${task.helper.rating.toFixed(1)} (${task.helper.numReviews})`} 
+                      size="small" 
+                      variant="outlined"
+                      sx={{ height: 20, fontSize: '0.75rem', borderColor: '#fbbf24', color: 'text.secondary' }}
+                    />
+                  )}
+                </Stack>
+                
                 {task.helper?.phone && (
                   <Typography variant="caption" component="a" href={`tel:${task.helper.phone}`} sx={{ color: 'primary.main', textDecoration: 'none' }}>
                     {task.helper.phone}
@@ -267,16 +283,20 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
               </Box>
             </Stack>
 
-            {isHelper && (
+            {isHelper && task.status === 'claimed' && (
               <Button variant="contained" color="success" fullWidth onClick={handleComplete} disabled={isProcessing}>
                 Mark as Complete
               </Button>
             )}
             
-            {isCreator && (
+            {isCreator && task.status === 'claimed' && (
               <Typography variant="caption" color="text.secondary">
                 Waiting for the helper to complete the task.
               </Typography>
+            )}
+
+            {task.status === 'completed' && (
+               <Chip label="Task Completed" color="success" size="small" sx={{ mt: 1 }} />
             )}
           </Box>
         )}
