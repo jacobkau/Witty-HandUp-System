@@ -29,7 +29,6 @@ export const getTasks = async (req, res) => {
 
     const total = await Task.countDocuments(query);
     
-    // Sort by Urgent first, then newest
     const tasks = await Task.find(query)
       .populate("requester", "name email phone rating numReviews")
       .populate("helper", "name email phone rating numReviews")
@@ -49,7 +48,6 @@ export const createTask = async (req, res) => {
 
   try {
     if (isUrgent) {
-      // Check if user already has 2 active urgent tasks
       const activeUrgent = await Task.countDocuments({ 
         requester: req.user.id, 
         isUrgent: true, 
@@ -68,11 +66,9 @@ export const createTask = async (req, res) => {
 
     const populatedTask = await Task.findById(task._id).populate("requester", "name");
     
-    // NOTIFY SKILLED USERS VIA SOCKET
     const io = getIO();
     io.emit("new-task", populatedTask); 
     
-    // Find users with matching skills and send a targeted socket
     const skilledUsers = await User.find({ skills: { $in: [category] } });
     skilledUsers.forEach(u => {
       io.emit(`skill-match-${u._id}`, { message: `New ${category} task: ${title}` });
@@ -93,7 +89,6 @@ export const placeBid = async (req, res) => {
     if (task.status !== "open") return res.status(400).json({ success: false, error: "Task is no longer open" });
     if (task.requester.toString() === req.user.id) return res.status(400).json({ success: false, error: "You cannot bid on your own task" });
 
-    // Check if already bid
     const existingBid = task.bids.find(b => b.helper.toString() === req.user.id);
     if (existingBid) {
       existingBid.amount = amount;
@@ -102,7 +97,8 @@ export const placeBid = async (req, res) => {
       task.bids.push({ helper: req.user.id, amount, message });
     }
 
-    await task.save();
+    await task.save({ validateModifiedOnly: true });
+
     const populatedTask = await Task.findById(task._id)
       .populate("requester", "name")
       .populate("bids.helper", "name rating numReviews");
@@ -128,12 +124,10 @@ export const acceptBid = async (req, res) => {
     const bid = task.bids.id(bidId);
     if (!bid) return res.status(404).json({ success: false, error: "Bid not found" });
 
-    // ESCROW LOGIC: Check Requester Wallet
     if (task.requester.walletBalance < bid.amount) {
       return res.status(400).json({ success: false, error: "Insufficient wallet balance to accept this bid." });
     }
 
-    // Deduct from Requester 
     task.requester.walletBalance -= bid.amount;
     await task.requester.save();
 
@@ -173,7 +167,6 @@ export const completeTask = async (req, res) => {
 
     task.status = "completed";
     
-    // ESCROW LOGIC: Release funds to Helper
     const helper = await User.findById(task.helper._id);
     helper.walletBalance += task.price;
     await helper.save();
@@ -232,7 +225,7 @@ export const updateTask = async (req, res) => {
     task.category = category || task.category;
     task.location = location || task.location;
     task.deadline = deadline || task.deadline;
-    task.price = price || task.price;
+    task.price = price !== undefined ? price : task.price;
     task.isUrgent = isUrgent !== undefined ? isUrgent : task.isUrgent;
 
     await task.save();
