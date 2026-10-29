@@ -1,14 +1,7 @@
 import express from 'express';
 import { 
-  getTasks,
-  createTask,
-  placeBid,
-  acceptBid,
-  completeTask,
-  updateTask,
-  getMyTasks,
-  deleteTask,
-  rateTask
+  getTasks, createTask, placeBid, acceptBid, 
+  submitPayment, confirmPayment, rateTask, updateTask, deleteTask, getMyTasks
 } from '../controllers/tasks.js';
 import { protect } from '../middleware/auth.js'; 
 
@@ -20,14 +13,11 @@ router.route('/')
 
 router.post('/:id/bid', protect, placeBid);
 router.put('/:id/accept-bid', protect, acceptBid);
-
-router.route('/:id/complete')
-  .put(protect, completeTask);
-  
+router.put('/:id/submit-payment', protect, submitPayment);
+router.put('/:id/confirm-payment', protect, confirmPayment);
 router.post('/:id/rate', protect, rateTask);
 
-router.route('/my-tasks')
-  .get(protect, getMyTasks);
+router.route('/my-tasks').get(protect, getMyTasks);
 
 router.route('/:id')
   .put(protect, updateTask) 
