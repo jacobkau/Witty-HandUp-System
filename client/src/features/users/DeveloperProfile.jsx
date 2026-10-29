@@ -126,6 +126,7 @@ export default function DeveloperProfile() {
                   Tech Stack Used
                 </Typography>
                 <Divider sx={{ mb: 3 }} />
+                {/* ✅ FIXED: Closed with </Box> instead of </Chip> */}
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
                   {techStack.map((tech, index) => (
                     <Chip 
@@ -137,7 +138,7 @@ export default function DeveloperProfile() {
                       sx={{ fontWeight: 'bold', bgcolor: 'primary.50' }}
                     />
                   ))}
-                </Chip>
+                </Box>
               </Paper>
 
               {/* APP STATS */}
