@@ -21,6 +21,7 @@ export default function Layout() {
         <div className="min-h-screen bg-gray-50 flex flex-col">
           <Navbar />
           
+          {/* Navbar */}
           <main className="flex-grow container mx-auto px-4 pt-24 pb-8">
             <Routes>
               {/* Public Routes */}
@@ -30,6 +31,9 @@ export default function Layout() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password/:token" element={<ResetPassword />} />
               
+              {/* Developer Profile is Public */}
+              <Route path="/developer" element={<DeveloperProfile />} />
+              
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>
                 <Route path="/tasks" element={<TaskList />} />
@@ -37,7 +41,6 @@ export default function Layout() {
                 <Route path="/tasks/edit/:taskId" element={<EditTaskPage />} />
                 <Route path="/users/:userId" element={<Profile />} />
                 <Route path="/admin" element={<AdminDashboard />} /> 
-                <Route path="/developer" element={<DeveloperProfile />} />
               </Route>
               
               {/* 404 Route */}
@@ -50,9 +53,17 @@ export default function Layout() {
             </Routes>
           </main>
           
-          <footer className="bg-white border-t py-4 mt-auto">
-            <div className="container mx-auto px-4 text-center text-gray-500">
-              © {new Date().getFullYear()} <b>Witty HandUp System.</b> All Rights Reserved!
+          <footer className="bg-white border-t py-6 mt-auto">
+            <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center text-gray-500 text-sm">
+              <p>© {new Date().getFullYear()} <b>Witty HandUp System.</b> All Rights Reserved!</p>
+              
+              {/* Link to Developer Profile in Footer */}
+              <a 
+                href="/developer" 
+                className="mt-2 md:mt-0 hover:text-blue-600 transition-colors font-medium"
+              >
+                Engineered by Jacob Kau
+              </a>
             </div>
           </footer>
         </div>
