@@ -27,7 +27,7 @@ export default function Navbar() {
       };
       checkNotifs();
     }
-  }, [user, location.pathname]); // Re-fetch on page change
+  }, [user, location.pathname]); 
 
   const getTabClass = (path) => {
     const isActive = location.pathname === path;
