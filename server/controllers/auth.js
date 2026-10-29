@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import User from '../models/User.js';
-import Task from '../models/Task.js'; // <-- CRITICAL FIX: Missing Import Added
+import Task from '../models/Task.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { sendEmail } from '../utils/sendEmail.js'; 
@@ -23,11 +23,7 @@ Welcome to Witty HandUp System!
 
 We are thrilled to have you on board. Witty HandUp is designed to help you seamlessly delegate tasks and assist your neighbors.
 
-You can now log in to start posting tasks, or browse the dashboard to see what the community needs help with today.
-
 Go to Dashboard: https://wittyhandupsystem.vercel.app/
-
-If you have any questions, simply reply to this email. We're always here to help.
 
 Best regards,
 The Witty HandUp System Team`;
@@ -44,7 +40,8 @@ The Witty HandUp System Team`;
         name: user.name, 
         email: user.email, 
         phone: user.phone,
-        role: user.role 
+        role: user.role,
+        walletBalance: user.walletBalance
       }
     });
   } catch (err) {
@@ -53,7 +50,6 @@ The Witty HandUp System Team`;
 };
 
 // @desc    Login user
-// @route   POST /api/auth/login
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -85,18 +81,20 @@ export const login = async (req, res) => {
         role: user.role, 
         email: user.email,
         phone: user.phone,
+        walletBalance: user.walletBalance,
+        skills: user.skills,
+        rating: user.rating,
+        numReviews: user.numReviews,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
     });
   } catch (err) {
-    console.error('Login error:', err);
     res.status(500).json({ success: false, error: 'Login failed: ' + err.message });
   }
 };
 
 // @desc    Update user profile
-// @route   PUT /api/auth/me
 export const updateProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('+password');
@@ -108,6 +106,7 @@ export const updateProfile = async (req, res) => {
     if (req.body.name) user.name = req.body.name;
     if (req.body.email) user.email = req.body.email;
     if (req.body.phone !== undefined) user.phone = req.body.phone;
+    if (req.body.skills) user.skills = req.body.skills;
 
     if (req.body.password) {
       if (req.body.password.length < 6) {
@@ -126,6 +125,10 @@ export const updateProfile = async (req, res) => {
         email: updatedUser.email,
         phone: updatedUser.phone,
         role: updatedUser.role,
+        walletBalance: updatedUser.walletBalance,
+        skills: updatedUser.skills,
+        rating: updatedUser.rating,
+        numReviews: updatedUser.numReviews,
         createdAt: updatedUser.createdAt,
         updatedAt: updatedUser.updatedAt
       }
@@ -136,7 +139,6 @@ export const updateProfile = async (req, res) => {
 };
 
 // @desc    Forgot Password
-// @route   POST /api/auth/forgotpassword
 export const forgotPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -151,12 +153,10 @@ export const forgotPassword = async (req, res) => {
 
     const emailText = `Hello ${user.name},
 
-You are receiving this email because you (or someone else) requested a password reset for your Witty HandUp account.
+You are receiving this email because you (or someone else) requested a password reset.
 
-Please click the link below to reset your password:
+Please click the link below:
 ${resetUrl}
-
-If you did not request this, please ignore this email and your password will remain unchanged.
 
 This link will expire in 10 minutes.`;
 
@@ -175,7 +175,6 @@ This link will expire in 10 minutes.`;
 };
 
 // @desc    Reset Password
-// @route   PUT /api/auth/resetpassword/:resettoken
 export const resetPassword = async (req, res) => {
   try {
     const resetPasswordToken = crypto
@@ -193,32 +192,30 @@ export const resetPassword = async (req, res) => {
     }
 
     user.password = req.body.password;
-    
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     
     await user.save();
 
-    res.status(200).json({ success: true, message: 'Password reset successful. You can now login.' });
+    res.status(200).json({ success: true, message: 'Password reset successful.' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// @desc    Get current user
-// @route   GET /api/auth/me
+// @desc    Get current user (Includes Reviews, Wallet, Skills)
 export const getMe = async (req, res) => {
   try {
     if (!req.user || !req.user._id) {
       return res.status(401).json({ success: false, error: 'Not authorized' });
     }
 
-    // Fetch reviews (Tasks where this user was the helper and it was rated)
+    // Fetch reviews: Tasks where this user was the helper AND it was rated
     const reviews = await Task.find({
       helper: req.user._id,
       isRated: true
     })
-    .populate('requester', 'name')
+    .populate('requester', 'name') 
     .select('title requester ratingValue createdAt updatedAt')
     .sort({ updatedAt: -1 });
 
@@ -230,6 +227,8 @@ export const getMe = async (req, res) => {
         email: req.user.email,
         phone: req.user.phone,
         role: req.user.role,
+        walletBalance: req.user.walletBalance || 0,
+        skills: req.user.skills || [],
         rating: req.user.rating || 0,
         numReviews: req.user.numReviews || 0,
         createdAt: req.user.createdAt,
@@ -238,6 +237,7 @@ export const getMe = async (req, res) => {
       },
     });
   } catch (err) {
+    console.error("GetMe Error:", err);
     res.status(400).json({
       success: false,
       error: 'Failed to fetch profile: ' + err.message,
