@@ -15,9 +15,10 @@ const taskSchema = new mongoose.Schema({
     enum: ['errands', 'repairs', 'education', 'donations', 'cleaning', 'tech', 'delivery', 'events', 'other'],
     required: true
   },
-  status: { 
+
+   status: { 
     type: String, 
-    enum: ['open', 'claimed', 'awaiting_verification', 'completed'], 
+    enum: ['open', 'claimed', 'work_completed', 'awaiting_verification', 'completed'], 
     default: 'open' 
   },
   isUrgent: { type: Boolean, default: false },
