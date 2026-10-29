@@ -62,7 +62,7 @@ export default function Layout() {
                 href="/developer" 
                 className="mt-2 md:mt-0 hover:text-blue-600 transition-colors font-medium"
               >
-                Engineered by Jacob Kau
+                Engineered by Jacob Mwambwa
               </a>
             </div>
           </footer>
