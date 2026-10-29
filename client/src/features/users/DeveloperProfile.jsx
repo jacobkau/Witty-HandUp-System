@@ -33,11 +33,11 @@ export default function DeveloperProfile() {
 
           <Avatar 
                src="https://res.cloudinary.com/ozrcvfms/image/upload/v1793257603/admin.jpg" 
-            alt="Jacob Kau"
+            alt="Jacob Mwambwa"
             sx={{ width: 150, height: 150, mx: 'auto', mb: 3, border: '4px solid #1e293b', boxShadow: 3 }}
           />
           
-          <Typography variant="h3" fontWeight="800" gutterBottom>Jacob Kau</Typography>
+          <Typography variant="h3" fontWeight="800" gutterBottom>Jacob Mwambwa</Typography>
           <Typography variant="h6" sx={{ color: '#94a3b8', mb: 2, fontWeight: 400 }}>Full-Stack Software Engineer</Typography>
           
           <Chip label="Creator of Witty HandUp System" sx={{ bgcolor: '#1e293b', color: 'white', fontWeight: 'bold', mb: 4 }} />
