@@ -39,7 +39,7 @@ export default function DeveloperProfile() {
           </Button>
 
           <Avatar 
-            src="https://res.cloudinary.com/ozrcvfms/image/upload/v1792083177/admins/cwoapxllb9npcwljm07m.jpg" 
+            src="https://res.cloudinary.com/ozrcvfms/image/upload/v1793257603/admin.jpg" 
             alt="Jacob Mwambwa"
             sx={{ 
               width: 150, 
