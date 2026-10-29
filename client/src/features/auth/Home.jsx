@@ -72,31 +72,36 @@ export default function Home() {
 
       {/* FEATURES SECTION */}
       <Container maxWidth="lg" sx={{ mt: -6 }}>
-        <Grid container spacing={4} alignItems="stretch">
+        {/* display: 'flex' forces the grid to allow items to stretch to full height */}
+        <Grid container spacing={4} sx={{ display: 'flex', alignItems: 'stretch' }}>
           {features.map((feature, index) => (
             <Grid item xs={12} sm={6} md={3} key={index} sx={{ display: 'flex' }}>
-              {/* minHeight ensures all cards are exactly the same size */}
               <Paper elevation={3} sx={{ 
                 p: 4, 
-                width: '100%',
-                minHeight: { xs: 200, md: 220 }, 
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'flex-start',
-                textAlign: 'center', 
-                borderRadius: 3, 
-                transition: '0.3s', 
-                '&:hover': { transform: 'translateY(-5px)' } 
+                width: '100%', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                textAlign: 'center',
+                borderRadius: 3,
+                transition: '0.3s',
+                '&:hover': { transform: 'translateY(-5px)' }
               }}>
-                <Box sx={{ 
-                  width: 60, height: 60, borderRadius: '50%', bgcolor: `${feature.color}15`, color: feature.color, 
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 
-                }}>
-                  {feature.icon}
+                {/* This box groups the icon and title together to keep them at the top */}
+                <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <Box sx={{ 
+                    width: 60, height: 60, borderRadius: '50%', bgcolor: `${feature.color}15`, color: feature.color, 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 
+                  }}>
+                    {feature.icon}
+                  </Box>
+                  <Typography variant="h6" fontWeight="bold">{feature.title}</Typography>
                 </Box>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>{feature.title}</Typography>
-                <Typography variant="body2" color="text.secondary">{feature.desc}</Typography>
+                
+                {/* The description pushes to fill any remaining space */}
+                <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
+                  {feature.desc}
+                </Typography>
               </Paper>
             </Grid>
           ))}
