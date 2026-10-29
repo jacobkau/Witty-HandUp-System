@@ -24,20 +24,32 @@ const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const res = await api.post('/auth/login', { email, password });
-    localStorage.setItem('token', res.data.token);
-    setUser(res.data.user);
+    try {
+      const res = await api.post('/auth/login', { email, password });
+      localStorage.setItem('token', res.data.token);
+      setUser(res.data.user);
+    } catch (err) {
+      // Extract the clean error message from the backend
+      const message = err.response?.data?.error || 'Login failed. Please check your connection.';
+      throw new Error(message); 
+    }
   };
 
   const register = async (userData) => {
-    const res = await api.post('/auth/register', userData);
-    localStorage.setItem('token', res.data.token);
-    
-    setUser({
-      ...res.data.user,
-      role: res.data.user.role || 'user',
-       phone: res.data.user.phone || ''      
-    });
+    try {
+      const res = await api.post('/auth/register', userData);
+      localStorage.setItem('token', res.data.token);
+      
+      setUser({
+        ...res.data.user,
+        role: res.data.user.role || 'user',
+        phone: res.data.user.phone || ''      
+      });
+    } catch (err) {
+      // Extract the clean error message from the backend
+      const message = err.response?.data?.error || 'Registration failed. Please try again.';
+      throw new Error(message);
+    }
   };
 
   const logout = () => {
