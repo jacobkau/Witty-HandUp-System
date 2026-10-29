@@ -40,7 +40,7 @@ export default function DeveloperProfile() {
 
           <Avatar 
             src="https://res.cloudinary.com/ozrcvfms/image/upload/v1792083177/admins/cwoapxllb9npcwljm07m.jpg" 
-            alt="Jacob Kau"
+            alt="Jacob Mwambwa"
             sx={{ 
               width: 150, 
               height: 150, 
@@ -52,7 +52,7 @@ export default function DeveloperProfile() {
           />
           
           <Typography variant="h3" fontWeight="800" gutterBottom>
-            Jacob Kau
+            Jacob Mwambwa
           </Typography>
           <Typography variant="h6" sx={{ opacity: 0.9, mb: 2, fontWeight: 400 }}>
             Full-Stack Software Engineer
