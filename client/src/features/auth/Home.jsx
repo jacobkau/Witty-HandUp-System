@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import { 
   Gavel, AccountBalanceWallet, Work, Chat, 
-  Security, Star, CheckCircle, ArrowForward 
+  Security, ArrowForward 
 } from '@mui/icons-material';
 
 export default function Home() {
@@ -88,54 +88,77 @@ export default function Home() {
         </Grid>
       </Container>
 
-      {/* HOW IT WORKS SECTION */}
-      <Container maxWidth="md" sx={{ mt: 12 }}>
-        <Typography variant="h3" fontWeight="bold" textAlign="center" gutterBottom>
-          How It Works
-        </Typography>
-        <Typography variant="subtitle1" textAlign="center" color="text.secondary" mb={6}>
-          Getting help or earning money takes just a few clicks.
-        </Typography>
+      {/* HOW IT WORKS & CTA SIDE-BY-SIDE */}
+      <Container maxWidth="lg" sx={{ mt: 12 }}>
+        <Grid container spacing={6} alignItems="stretch">
+          
+          {/* Left Side: How It Works */}
+          <Grid item xs={12} md={7}>
+            <Typography variant="h3" fontWeight="bold" gutterBottom>
+              How It Works
+            </Typography>
+            <Typography variant="subtitle1" color="text.secondary" mb={4}>
+              Getting help or earning money takes just a few clicks.
+            </Typography>
 
-        <Stack spacing={4}>
-          {[
-            { step: "1", title: "Post Your Task", desc: "Describe what you need done, set your budget, and pin your location on the map." },
-            { step: "2", title: "Receive Bids", desc: "Local helpers will review your task and submit their price offers." },
-            { step: "3", title: "Accept & Chat", desc: "Pick the best helper, pay into escrow, and coordinate via our built-in chat." },
-            { step: "4", title: "Complete & Rate", desc: "Once the task is done, the money is released, and you can rate the helper." }
-          ].map((item, index) => (
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems="center" key={index}>
-              <Box sx={{ 
-                width: 50, height: 50, flexShrink: 0, borderRadius: '50%', bgcolor: 'primary.main', color: 'white', 
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' 
-              }}>
-                {item.step}
-              </Box>
-              <Box textAlign={{ xs: 'center', sm: 'left' }}>
-                <Typography variant="h6" fontWeight="bold">{item.title}</Typography>
-                <Typography variant="body1" color="text.secondary">{item.desc}</Typography>
-              </Box>
+            <Stack spacing={4}>
+              {[
+                { step: "1", title: "Post Your Task", desc: "Describe what you need done, set your budget, and pin your location on the map." },
+                { step: "2", title: "Receive Bids", desc: "Local helpers will review your task and submit their price offers." },
+                { step: "3", title: "Accept & Chat", desc: "Pick the best helper, pay into escrow, and coordinate via our built-in chat." },
+                { step: "4", title: "Complete & Rate", desc: "Once the task is done, the money is released, and you can rate the helper." }
+              ].map((item, index) => (
+                <Stack direction="row" spacing={3} alignItems="flex-start" key={index}>
+                  <Box sx={{ 
+                    width: 45, height: 45, flexShrink: 0, borderRadius: '50%', bgcolor: 'primary.main', color: 'white', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', fontWeight: 'bold' 
+                  }}>
+                    {item.step}
+                  </Box>
+                  <Box>
+                    <Typography variant="h6" fontWeight="bold">{item.title}</Typography>
+                    <Typography variant="body1" color="text.secondary">{item.desc}</Typography>
+                  </Box>
+                </Stack>
+              ))}
             </Stack>
-          ))}
-        </Stack>
-      </Container>
+          </Grid>
 
-      {/* CTA BOTTOM */}
-      {!user && (
-        <Container maxWidth="md" sx={{ mt: 12, textAlign: 'center' }}>
-          <Paper elevation={0} sx={{ p: 6, bgcolor: 'grey.50', borderRadius: 4, border: '1px solid #e0e0e0' }}>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
-              Ready to get started?
-            </Typography>
-            <Typography variant="body1" color="text.secondary" mb={4}>
-              Join thousands of users saving time and earning money on Witty HandUp.
-            </Typography>
-            <Button component={Link} to="/register" variant="contained" size="large" disableElevation sx={{ px: 6, py: 1.5, fontWeight: 'bold' }}>
-              Create a Free Account
-            </Button>
-          </Paper>
-        </Container>
-      )}
+          {/* Right Side: CTA Box */}
+          <Grid item xs={12} md={5}>
+            <Paper elevation={0} sx={{ 
+              height: '100%', 
+              p: 5, 
+              borderRadius: 4, 
+              backgroundImage: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+              color: 'white',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              textAlign: 'center'
+            }}>
+              <Typography variant="h4" fontWeight="bold" gutterBottom>
+                Ready to get started?
+              </Typography>
+              <Typography variant="body1" sx={{ opacity: 0.9, mb: 4 }}>
+                Join thousands of users saving time and earning money on Witty HandUp. Create your free account today.
+              </Typography>
+              {!user ? (
+                <Button component={Link} to="/register" variant="contained" size="large" disableElevation 
+                  sx={{ bgcolor: '#fbbf24', color: '#000', fontWeight: 'bold', '&:hover': { bgcolor: '#f59e0b' }, py: 1.5 }}>
+                  Create a Free Account
+                </Button>
+              ) : (
+                <Button component={Link} to="/tasks" variant="contained" size="large" disableElevation 
+                  sx={{ bgcolor: '#fbbf24', color: '#000', fontWeight: 'bold', '&:hover': { bgcolor: '#f59e0b' }, py: 1.5 }}>
+                  Go to Dashboard
+                </Button>
+              )}
+            </Paper>
+          </Grid>
+
+        </Grid>
+      </Container>
 
     </Box>
   );
