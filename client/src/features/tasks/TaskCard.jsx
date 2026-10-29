@@ -7,10 +7,10 @@ import {
   DialogContent, DialogActions 
 } from "@mui/material";
 import { 
-  CheckCircle, Pending, LocationOn, AccessTime, Star, Gavel, 
-  Phone, Email, Delete, Edit, Directions, Map as MapIcon 
+  LocationOn, AccessTime, Star, Gavel, 
+  Phone, Delete, Edit, Directions, Map as MapIcon 
 } from "@mui/icons-material";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function TaskCard({ task, onUpdate, onDelete }) {
@@ -28,7 +28,6 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
   const isHelper = currentUserId === task?.helper?._id;
   const hasBid = task?.bids?.find(b => b.helper?._id === currentUserId);
 
-  // Map Coordinates
   const lng = task?.location?.coordinates?.[0] || 0;
   const lat = task?.location?.coordinates?.[1] || 0;
   const hasValidLocation = lng !== 0 && lat !== 0;
@@ -93,7 +92,6 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
       boxShadow: 1,
       '&:hover': { boxShadow: 3 }
     }}>
-      {/* URGENT BANNER */}
       {task.isUrgent && (
         <Box sx={{ bgcolor: 'error.main', color: 'white', textAlign: 'center', py: 0.5, fontSize: '0.8rem', fontWeight: 'bold' }}>
           🚨 URGENT TASK
@@ -102,7 +100,6 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
       
       <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         
-        {/* HEADER SECTION */}
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
           <Box>
             <Typography variant="h6" fontWeight="bold" lineHeight={1.2}>
@@ -121,7 +118,6 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           />
         </Stack>
 
-        {/* MENU (Creator Only) */}
         {isCreator && (
           <Stack direction="row" spacing={1} justifyContent="flex-end" mt={1}>
             <Tooltip title="Edit Task">
@@ -139,12 +135,10 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
 
         <Divider sx={{ my: 2 }} />
 
-        {/* DESCRIPTION */}
         <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, mb: 2 }}>
           {task.description}
         </Typography>
 
-        {/* LOCATION & CONTACT */}
         <Stack spacing={1} mb={2}>
           <Stack direction="row" spacing={1} alignItems="center">
             <LocationOn fontSize="small" color="action" />
@@ -169,7 +163,6 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           </Stack>
         </Stack>
 
-        {/* MAP TOGGLE */}
         {hasValidLocation && (
           <Box mb={2}>
             <Stack direction="row" spacing={1}>
@@ -197,11 +190,8 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           </Box>
         )}
 
-        {/* BIDDING LOGIC */}
         {task.status === 'open' && (
           <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #f0f0f0' }}>
-            
-            {/* CREATOR VIEW: SEE BIDS */}
             {isCreator && (
               <Box>
                 <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
@@ -237,7 +227,6 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
               </Box>
             )}
 
-            {/* HELPER VIEW: PLACE BID */}
             {!isCreator && !hasBid && (
               <Stack direction="row" spacing={1}>
                 <TextField 
@@ -264,7 +253,6 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           </Box>
         )}
 
-        {/* CLAIMED STATE LOGIC */}
         {task.status === 'claimed' && (
           <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #f0f0f0' }}>
             <Stack direction="row" spacing={1} alignItems="center" mb={2}>
@@ -293,7 +281,6 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           </Box>
         )}
 
-        {/* CHAT (Only if claimed or completed) */}
         {task.status !== 'open' && (isCreator || isHelper) && (
           <Box mt={2}>
             <ChatBox taskId={task._id} />
@@ -304,7 +291,6 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
       
       </CardContent>
 
-      {/* DELETE CONFIRMATION DIALOG */}
       <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
