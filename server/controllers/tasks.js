@@ -210,7 +210,6 @@ export const rateTask = async (req, res) => {
     task.ratingValue = rating;
     await task.save();
 
-    // Return the fully populated task so the frontend updates immediately
     const populatedTask = await Task.findById(task._id)
       .populate("requester", "name email phone rating numReviews")
       .populate("helper", "name email phone rating numReviews");
@@ -225,7 +224,15 @@ export const updateTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
-    if (task.requester.toString() !== req.user.id) return res.status(403).json({ success: false, error: "Not authorized" });
+    
+    // ✅ FIX: Allow Admin to update any task
+    const isOwner = task.requester.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ success: false, error: "Not authorized to update this task" });
+    }
+
     if (task.status !== "open") return res.status(400).json({ success: false, error: "Only open tasks can be updated" });
 
     const { title, description, category, location, deadline, price, isUrgent } = req.body;
@@ -248,9 +255,15 @@ export const deleteTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
-    if (task.requester.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, error: "Not authorized" });
+
+    const isOwner = task.requester.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    // ✅ FIX: Allow Admin to delete any task
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ success: false, error: "Not authorized to delete this task" });
     }
+
     await task.deleteOne();
     res.status(200).json({ success: true, data: {} });
   } catch (err) {
