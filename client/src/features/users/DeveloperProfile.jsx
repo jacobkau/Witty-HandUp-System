@@ -32,7 +32,7 @@ export default function DeveloperProfile() {
           </Button>
 
           <Avatar 
-            src="https://res.cloudinary.com/ozrcvfms/image/upload/v1792083177/admins/cwoapxllb9npcwljm07m.jpg" 
+               src="https://res.cloudinary.com/ozrcvfms/image/upload/v1793257603/admin.jpg" 
             alt="Jacob Kau"
             sx={{ width: 150, height: 150, mx: 'auto', mb: 3, border: '4px solid #1e293b', boxShadow: 3 }}
           />
@@ -79,8 +79,8 @@ export default function DeveloperProfile() {
             </Typography>
             <Stack direction="row" spacing={2} alignItems="center" mt={1}>
               <Email sx={{ color: '#64748b' }} />
-              <Typography variant="body2" component="a" href="mailto:wittyhighbrowtechnologies@gmail.com" sx={{ color: '#2563eb', textDecoration: 'none', fontWeight: 'bold' }}>
-                wittyhighbrowtechnologies@gmail.com
+              <Typography variant="body2" component="a" href="mailto:kaujacob4@gmail.com" sx={{ color: '#2563eb', textDecoration: 'none', fontWeight: 'bold' }}>
+                Send Mail
               </Typography>
             </Stack>
           </Paper>
