@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import useAuth from '../auth/useAuth';
 import api from '../../lib/api';
 import { toast } from 'react-toastify';
-
 import { 
   Box, Paper, Typography, CircularProgress, Button, Divider, 
   Avatar, Chip, Stack, TextField, IconButton, InputAdornment 
@@ -27,15 +26,9 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  // Updated formData to include skills
   const [formData, setFormData] = useState({ 
-    name: '', 
-    email: '', 
-    phone: '', 
-    password: '',
-    skillsString: '' 
+    name: '', email: '', phone: '', password: '', skillsString: '' 
   });
-  
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
@@ -78,12 +71,7 @@ export default function Profile() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Convert the comma-separated skills back to an array
-      const skillsArray = formData.skillsString
-        .split(',')
-        .map(s => s.trim())
-        .filter(s => s !== '');
-
+      const skillsArray = formData.skillsString.split(',').map(s => s.trim()).filter(s => s !== '');
       const payload = {
         name: formData.name,
         email: formData.email,
@@ -93,7 +81,7 @@ export default function Profile() {
       };
 
       const res = await api.put('/auth/me', payload);
-      setUser({ ...user, ...res.data.user }); 
+      setUser({ ...user, ...res.data.user });
       updateUser(res.data.user); 
       setIsEditing(false);
       toast.success('Profile updated successfully!');
@@ -134,7 +122,7 @@ export default function Profile() {
 
       <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
         
-        {/* Header Section */}
+        {/* Header */}
         <Box sx={{ bgcolor: 'primary.main', color: 'white', p: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
           <Box display="flex" alignItems="center" gap={3}>
             <Avatar sx={{ width: 80, height: 80, fontSize: '2rem', bgcolor: 'white', color: 'primary.main', fontWeight: 'bold' }}>
@@ -147,8 +135,6 @@ export default function Profile() {
                   <Chip icon={<AdminIcon style={{ color: 'white' }} />} label="Admin" size="small" sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', fontWeight: 'bold' }} />
                 )}
               </Stack>
-              <Typography variant="body1" sx={{ opacity: 0.8, mt: 0.5 }}>Witty HandUp Member</Typography>
-              
               <Stack direction="row" alignItems="center" spacing={1} mt={1}>
                 {renderStars(user.rating || 0)}
                 <Typography variant="body2" sx={{ opacity: 0.9 }}>
@@ -165,7 +151,7 @@ export default function Profile() {
           )}
         </Box>
 
-        {/* Details / Edit Section */}
+        {/* Details / Edit */}
         <Box p={4}>
           {isEditing ? (
             <Box component="form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
@@ -176,14 +162,13 @@ export default function Profile() {
                 <TextField label="Email Address" type="email" fullWidth value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
                 
                 <TextField 
-                  label="Phone Number (for Task Contact)" type="tel" fullWidth value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+254 700 000000"
-                  helperText="Helpers will use this to call you if needed"
+                  label="Phone Number" type="tel" fullWidth value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+254 700 000000"
                   InputProps={{ startAdornment: <InputAdornment position="start"><PhoneIcon color="action" /></InputAdornment> }}
                 />
 
                 <TextField 
                   label="Skills (comma separated)" fullWidth value={formData.skillsString} onChange={(e) => setFormData({ ...formData, skillsString: e.target.value })} 
-                  placeholder="e.g., plumbing, tech, cleaning, errands"
+                  placeholder="e.g., plumbing, tech, cleaning"
                   helperText="You will get notified when tasks matching these skills are posted"
                   InputProps={{ startAdornment: <InputAdornment position="start"><WorkIcon color="action" /></InputAdornment> }}
                 />
@@ -228,7 +213,6 @@ export default function Profile() {
                   <Typography variant="body1">{user.phone || "Not provided"}</Typography>
                 </Box>
 
-                {/* WALLET BALANCE */}
                 <Box>
                   <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
                     <WalletIcon fontSize="small" color="action" />
@@ -239,7 +223,6 @@ export default function Profile() {
                   </Typography>
                 </Box>
 
-                {/* SKILLS DISPLAY */}
                 <Box>
                   <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
                     <WorkIcon fontSize="small" color="action" />
