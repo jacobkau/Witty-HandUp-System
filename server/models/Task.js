@@ -15,12 +15,13 @@ const taskSchema = new mongoose.Schema({
     enum: ['errands', 'repairs', 'education', 'donations', 'cleaning', 'tech', 'delivery', 'events', 'other'],
     required: true
   },
-  status: { type: String, enum: ['open', 'claimed', 'completed'], default: 'open' },
+  status: { 
+    type: String, 
+    enum: ['open', 'claimed', 'awaiting_verification', 'completed'], 
+    default: 'open' 
+  },
   isUrgent: { type: Boolean, default: false },
-  
-  // Default set to 0 to protect older tasks
   price: { type: Number, required: true, min: 0, default: 0 }, 
-  
   location: {
     type: { type: String, enum: ['Point'], required: true },
     coordinates: { type: [Number], required: true, index: '2dsphere' },
@@ -30,6 +31,10 @@ const taskSchema = new mongoose.Schema({
   requester: { type: mongoose.Schema.ObjectId, ref: 'User', required: true },
   helper: { type: mongoose.Schema.ObjectId, ref: 'User' },
   bids: [bidSchema],
+  
+  paymentCode: { type: String },
+  isPaid: { type: Boolean, default: false },
+  
   isRated: { type: Boolean, default: false },
   ratingValue: { type: Number, min: 1, max: 5 }
 }, { timestamps: true });
