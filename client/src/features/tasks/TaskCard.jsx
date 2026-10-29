@@ -23,7 +23,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
   const [error, setError] = useState(null);
   const [showMap, setShowMap] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false); 
+  const [chatOpen, setChatOpen] = useState(false);
 
   const currentUserId = user?._id || user?.id;
   const isCreator = currentUserId === task?.requester?._id;
@@ -92,22 +92,24 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
       flexDirection: 'column',
       border: task.isUrgent ? '2px solid #d32f2f' : '1px solid #e0e0e0',
       boxShadow: 1,
+      borderRadius: 2,
       '&:hover': { boxShadow: 3 }
     }}>
       {task.isUrgent && (
-        <Box sx={{ bgcolor: 'error.main', color: 'white', textAlign: 'center', py: 0.5, fontSize: '0.8rem', fontWeight: 'bold' }}>
+        <Box sx={{ bgcolor: 'error.main', color: 'white', textAlign: 'center', py: 0.8, fontSize: '0.85rem', fontWeight: 'bold' }}>
           🚨 URGENT TASK
         </Box>
       )}
       
-      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 3 }}>
         
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+        {/* HEADER */}
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
           <Box>
-            <Typography variant="h6" fontWeight="bold" lineHeight={1.2}>
+            <Typography variant="h6" fontWeight="bold" lineHeight={1.3} mb={1}>
               {task.title}
             </Typography>
-            <Stack direction="row" spacing={1} mt={1} flexWrap="wrap">
+            <Stack direction="row" spacing={1} flexWrap="wrap">
               <Chip label={`KES ${task.price}`} color="success" size="small" sx={{ fontWeight: 'bold' }} />
               <Chip label={task.category.toUpperCase()} size="small" variant="outlined" />
               <Chip icon={<AccessTime fontSize="small" />} label={new Date(task.createdAt).toLocaleDateString()} size="small" />
@@ -117,6 +119,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
             label={task.status.toUpperCase()} 
             color={task.status === 'open' ? 'warning' : task.status === 'claimed' ? 'info' : 'success'} 
             size="small"
+            sx={{ fontWeight: 'bold' }}
           />
         </Stack>
 
@@ -137,19 +140,21 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
 
         <Divider sx={{ my: 2 }} />
 
-        <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, mb: 2 }}>
+        {/* DESCRIPTION */}
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flexGrow: 1 }}>
           {task.description}
         </Typography>
 
-        <Stack spacing={1} mb={2}>
+        {/* LOCATION & CREATOR INFO */}
+        <Stack spacing={1.5} mb={2}>
           <Stack direction="row" spacing={1} alignItems="center">
             <LocationOn fontSize="small" color="action" />
-            <Typography variant="caption" color="text.secondary" noWrap>
+            <Typography variant="caption" color="text.secondary">
               {task.location.address || "Coordinates pinned"}
             </Typography>
           </Stack>
           <Stack direction="row" spacing={1} alignItems="center">
-            <Avatar sx={{ width: 20, height: 20, fontSize: 10, bgcolor: 'primary.main' }}>
+            <Avatar sx={{ width: 24, height: 24, fontSize: 12, bgcolor: 'primary.main' }}>
               {task.requester?.name?.charAt(0)}
             </Avatar>
             <Typography variant="caption" color="text.secondary">
@@ -158,13 +163,14 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
             {task.requester?.phone && (
               <Tooltip title="Call Creator">
                 <IconButton size="small" href={`tel:${task.requester.phone}`} color="success">
-                  <Phone sx={{ fontSize: 14 }} />
+                  <Phone sx={{ fontSize: 16 }} />
                 </IconButton>
               </Tooltip>
             )}
           </Stack>
         </Stack>
 
+        {/* MAP & DIRECTIONS */}
         {hasValidLocation && (
           <Box mb={2}>
             <Stack direction="row" spacing={1}>
@@ -192,6 +198,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           </Box>
         )}
 
+        {/* OPEN STATE (BIDDING) */}
         {task.status === 'open' && (
           <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #f0f0f0' }}>
             {isCreator && (
@@ -232,12 +239,8 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
             {!isCreator && !hasBid && (
               <Stack direction="row" spacing={1}>
                 <TextField 
-                  size="small" 
-                  type="number" 
-                  label="Your Bid (KES)" 
-                  value={bidAmount} 
-                  onChange={(e) => setBidAmount(e.target.value)} 
-                  fullWidth
+                  size="small" type="number" label="Your Bid (KES)" 
+                  value={bidAmount} onChange={(e) => setBidAmount(e.target.value)} fullWidth
                 />
                 <Button variant="contained" onClick={handlePlaceBid} disabled={isProcessing || !bidAmount}>
                   Bid
@@ -258,60 +261,64 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
         {/* CLAIMED OR COMPLETED STATE */}
         {(task.status === 'claimed' || task.status === 'completed') && task.helper && (
           <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #f0f0f0' }}>
-            <Stack direction="row" spacing={1} alignItems="center" mb={2} justifyContent="space-between">
-              
-              {/* Helper Info */}
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Avatar sx={{ width: 32, height: 32, bgcolor: 'info.main' }}>{task.helper?.name?.charAt(0)}</Avatar>
-                <Box>
+            
+            {/* Helper Card */}
+            <Box sx={{ bgcolor: 'grey.50', p: 1.5, borderRadius: 2, mb: 2 }}>
+              <Typography variant="caption" fontWeight="bold" color="text.secondary" textTransform="uppercase">
+                Assigned Helper
+              </Typography>
+              <Stack direction="row" spacing={1.5} alignItems="center" mt={1}>
+                <Avatar sx={{ width: 36, height: 36, bgcolor: 'info.main' }}>
+                  {task.helper?.name?.charAt(0)}
+                </Avatar>
+                <Box flexGrow={1}>
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <Typography variant="body2" fontWeight="bold">Helper: {task.helper?.name}</Typography>
+                    <Typography variant="body2" fontWeight="bold">{task.helper?.name}</Typography>
                     {task.helper?.numReviews > 0 && (
                       <Chip 
                         icon={<Star style={{ color: '#fbbf24', fontSize: 14 }} />}
                         label={`${task.helper.rating.toFixed(1)}`} 
-                        size="small" 
-                        variant="outlined"
+                        size="small" variant="outlined"
                         sx={{ height: 20, fontSize: '0.75rem', borderColor: '#fbbf24', color: 'text.secondary' }}
                       />
                     )}
                   </Stack>
                   {task.helper?.phone && (
-                    <Typography variant="caption" component="a" href={`tel:${task.helper.phone}`} sx={{ color: 'primary.main', textDecoration: 'none' }}>
-                      {task.helper.phone}
+                    <Typography variant="caption" component="a" href={`tel:${task.helper.phone}`} sx={{ color: 'primary.main', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Phone sx={{ fontSize: 12 }} /> {task.helper.phone}
                     </Typography>
                   )}
                 </Box>
               </Stack>
+            </Box>
 
-              {/* CHAT BUTTON */}
+            {/* Action Buttons */}
+            <Stack spacing={1}>
+              {isHelper && task.status === 'claimed' && (
+                <Button variant="contained" color="success" fullWidth onClick={handleComplete} disabled={isProcessing}>
+                  Mark as Complete
+                </Button>
+              )}
+              
+              {task.status === 'completed' && (
+                 <Chip label="Task Completed successfully" color="success" size="small" sx={{ width: '100%', py: 1 }} />
+              )}
+
+              {/* Chat Button (Full Width) */}
               {(isCreator || isHelper) && (
                 <Button 
-                  variant="outlined" 
-                  color="primary" 
-                  size="small" 
-                  startIcon={<ChatIcon />} 
-                  onClick={() => setChatOpen(true)}
+                  variant="outlined" color="primary" size="medium" startIcon={<ChatIcon />} 
+                  onClick={() => setChatOpen(true)} fullWidth
                 >
-                  Message
+                  Open Chat / Messages
                 </Button>
               )}
             </Stack>
 
-            {isHelper && task.status === 'claimed' && (
-              <Button variant="contained" color="success" fullWidth onClick={handleComplete} disabled={isProcessing}>
-                Mark as Complete
-              </Button>
-            )}
-            
             {isCreator && task.status === 'claimed' && (
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" color="text.secondary" display="block" mt={1} textAlign="center">
                 Waiting for the helper to complete the task.
               </Typography>
-            )}
-
-            {task.status === 'completed' && (
-               <Chip label="Task Completed" color="success" size="small" sx={{ mt: 1 }} />
             )}
           </Box>
         )}
