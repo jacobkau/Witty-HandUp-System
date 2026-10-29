@@ -75,13 +75,15 @@ export default function Home() {
         <Grid container spacing={4} alignItems="stretch">
           {features.map((feature, index) => (
             <Grid item xs={12} sm={6} md={3} key={index} sx={{ display: 'flex' }}>
-              {/* height: 100% and display: flex ensures equal heights across the row */}
+              {/* minHeight ensures all cards are exactly the same size */}
               <Paper elevation={3} sx={{ 
                 p: 4, 
                 width: '100%',
+                minHeight: { xs: 200, md: 220 }, 
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
+                justifyContent: 'flex-start',
                 textAlign: 'center', 
                 borderRadius: 3, 
                 transition: '0.3s', 
