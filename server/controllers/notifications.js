@@ -1,6 +1,5 @@
 import Notification from '../models/Notification.js';
 
-// @desc    Get user notifications
 export const getNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({ recipient: req.user.id })
@@ -13,7 +12,6 @@ export const getNotifications = async (req, res) => {
   }
 };
 
-// @desc    Mark all as read
 export const markAsRead = async (req, res) => {
   try {
     await Notification.updateMany({ recipient: req.user.id, isRead: false }, { isRead: true });
