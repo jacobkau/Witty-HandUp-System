@@ -1,7 +1,6 @@
 import Task from "../models/Task.js";
 import User from "../models/User.js";
 import { getIO } from "../sockets/socket.js";
-import { sendEmail } from "../utils/sendEmail.js";
 
 export const getTasks = async (req, res) => {
   try {
@@ -10,16 +9,10 @@ export const getTasks = async (req, res) => {
     const skip = (page - 1) * limit;
 
     let query = {};
-    if (req.query.admin === 'true') {
-      if (req.query.status) query.status = req.query.status;
-    } else {
-      query.status = req.query.status || { $ne: "completed" };
-    }
+    if (req.query.status) query.status = req.query.status;
+    else query.status = { $ne: "completed" };
 
-    if (req.query.category && req.query.category !== 'all') {
-      query.category = req.query.category;
-    }
-
+    if (req.query.category && req.query.category !== 'all') query.category = req.query.category;
     if (req.query.search) {
       query.$or = [
         { title: { $regex: req.query.search, $options: 'i' } }, 
@@ -28,7 +21,6 @@ export const getTasks = async (req, res) => {
     }
 
     const total = await Task.countDocuments(query);
-    
     const tasks = await Task.find(query)
       .populate("requester", "name email phone rating numReviews")
       .populate("helper", "name email phone rating numReviews")
@@ -45,36 +37,13 @@ export const getTasks = async (req, res) => {
 
 export const createTask = async (req, res) => {
   const { title, description, category, location, deadline, price, isUrgent } = req.body;
-
   try {
-    if (isUrgent) {
-      const activeUrgent = await Task.countDocuments({ 
-        requester: req.user.id, 
-        isUrgent: true, 
-        status: { $ne: "completed" } 
-      });
-      if (activeUrgent >= 2) {
-        return res.status(400).json({ success: false, error: "You can only have 2 active urgent tasks at a time." });
-      }
-    }
-
     const task = await Task.create({
       title, description, category, location, deadline, price, isUrgent,
       requester: req.user.id,
       status: "open"
     });
-
-    const populatedTask = await Task.findById(task._id).populate("requester", "name");
-    
-    const io = getIO();
-    io.emit("new-task", populatedTask); 
-    
-    const skilledUsers = await User.find({ skills: { $in: [category] } });
-    skilledUsers.forEach(u => {
-      io.emit(`skill-match-${u._id}`, { message: `New ${category} task: ${title}` });
-    });
-
-    res.status(201).json({ success: true, data: populatedTask });
+    res.status(201).json({ success: true, data: task });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -98,13 +67,9 @@ export const placeBid = async (req, res) => {
     }
 
     await task.save({ validateModifiedOnly: true });
-
     const populatedTask = await Task.findById(task._id)
       .populate("requester", "name")
       .populate("bids.helper", "name rating numReviews");
-
-    const io = getIO();
-    io.emit("task-bid", populatedTask); 
 
     res.status(200).json({ success: true, data: populatedTask });
   } catch (err) {
@@ -115,21 +80,14 @@ export const placeBid = async (req, res) => {
 export const acceptBid = async (req, res) => {
   try {
     const { bidId } = req.body;
-    const task = await Task.findById(req.params.id).populate("requester");
+    const task = await Task.findById(req.params.id);
 
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
-    if (task.requester._id.toString() !== req.user.id) return res.status(403).json({ success: false, error: "Only the creator can accept bids" });
-    if (task.status !== "open") return res.status(400).json({ success: false, error: "Task already claimed/completed" });
+    if (task.requester.toString() !== req.user.id) return res.status(403).json({ success: false, error: "Only the creator can accept bids" });
+    if (task.status !== "open") return res.status(400).json({ success: false, error: "Task already claimed" });
 
     const bid = task.bids.id(bidId);
     if (!bid) return res.status(404).json({ success: false, error: "Bid not found" });
-
-    if (task.requester.walletBalance < bid.amount) {
-      return res.status(400).json({ success: false, error: "Insufficient wallet balance to accept this bid." });
-    }
-
-    task.requester.walletBalance -= bid.amount;
-    await task.requester.save();
 
     task.helper = bid.helper;
     task.price = bid.amount; 
@@ -140,47 +98,43 @@ export const acceptBid = async (req, res) => {
       .populate("requester", "name email phone")
       .populate("helper", "name email phone rating numReviews");
 
-    const io = getIO();
-    io.emit("task-claimed", populatedTask);
-
     res.status(200).json({ success: true, data: populatedTask });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-export const completeTask = async (req, res) => {
+export const submitPayment = async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id)
-      .populate("requester")
-      .populate("helper");
+    const { paymentCode } = req.body;
+    const task = await Task.findById(req.params.id);
 
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
-    if (task.status !== "claimed") return res.status(400).json({ success: false, error: "Task is not in claimed state" });
+    if (task.requester.toString() !== req.user.id) return res.status(403).json({ success: false, error: "Only the creator can submit payment" });
+    if (task.status !== "claimed") return res.status(400).json({ success: false, error: "Task must be claimed first" });
 
-    const isRequester = task.requester._id.toString() === req.user.id;
-    const isHelper = task.helper && task.helper._id.toString() === req.user.id;
-
-    if (!isRequester && !isHelper) {
-      return res.status(403).json({ success: false, error: "Not authorized" });
-    }
-
-    task.status = "completed";
-    
-    const helper = await User.findById(task.helper._id);
-    helper.walletBalance += task.price;
-    await helper.save();
-
+    task.paymentCode = paymentCode;
+    task.status = "awaiting_verification"; 
     await task.save();
 
-    const populatedTask = await Task.findById(task._id)
-      .populate("requester", "name email phone")
-      .populate("helper", "name email phone rating numReviews");
+    res.status(200).json({ success: true, data: task });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
 
-    const io = getIO();
-    io.emit("task-completed", populatedTask);
+export const confirmPayment = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ success: false, error: "Task not found" });
+    if (task.helper.toString() !== req.user.id) return res.status(403).json({ success: false, error: "Only the helper can confirm payment" });
+    if (task.status !== "awaiting_verification") return res.status(400).json({ success: false, error: "No pending payment to confirm" });
 
-    res.status(200).json({ success: true, data: populatedTask });
+    task.status = "completed";
+    task.isPaid = true;
+    await task.save();
+
+    res.status(200).json({ success: true, data: task });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -190,19 +144,13 @@ export const rateTask = async (req, res) => {
   try {
     const { rating } = req.body;
     const task = await Task.findById(req.params.id);
-
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
     if (task.status !== "completed") return res.status(400).json({ success: false, error: "Task must be completed first" });
-    if (task.isRated) return res.status(400).json({ success: false, error: "Task already rated" });
     if (task.requester.toString() !== req.user.id) return res.status(403).json({ success: false, error: "Only the creator can rate" });
 
     const helper = await User.findById(task.helper);
-    if (!helper) return res.status(404).json({ success: false, error: "Helper not found" });
-
     const newNumReviews = helper.numReviews + 1;
-    const newRating = ((helper.rating * helper.numReviews) + rating) / newNumReviews;
-
-    helper.rating = newRating;
+    helper.rating = ((helper.rating * helper.numReviews) + rating) / newNumReviews;
     helper.numReviews = newNumReviews;
     await helper.save();
 
@@ -210,73 +158,7 @@ export const rateTask = async (req, res) => {
     task.ratingValue = rating;
     await task.save();
 
-    const populatedTask = await Task.findById(task._id)
-      .populate("requester", "name email phone rating numReviews")
-      .populate("helper", "name email phone rating numReviews");
-
-    res.status(200).json({ success: true, message: "Rating submitted successfully", data: populatedTask });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-};
-
-export const updateTask = async (req, res) => {
-  try {
-    const task = await Task.findById(req.params.id);
-    if (!task) return res.status(404).json({ success: false, error: "Task not found" });
-    
-    // ✅ FIX: Allow Admin to update any task
-    const isOwner = task.requester.toString() === req.user.id;
-    const isAdmin = req.user.role === 'admin';
-
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({ success: false, error: "Not authorized to update this task" });
-    }
-
-    if (task.status !== "open") return res.status(400).json({ success: false, error: "Only open tasks can be updated" });
-
-    const { title, description, category, location, deadline, price, isUrgent } = req.body;
-    task.title = title || task.title;
-    task.description = description || task.description;
-    task.category = category || task.category;
-    task.location = location || task.location;
-    task.deadline = deadline || task.deadline;
-    task.price = price !== undefined ? price : task.price;
-    task.isUrgent = isUrgent !== undefined ? isUrgent : task.isUrgent;
-
-    await task.save();
-    res.status(200).json({ success: true, data: task });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-};
-
-export const deleteTask = async (req, res) => {
-  try {
-    const task = await Task.findById(req.params.id);
-    if (!task) return res.status(404).json({ success: false, error: "Task not found" });
-
-    const isOwner = task.requester.toString() === req.user.id;
-    const isAdmin = req.user.role === 'admin';
-
-    // ✅ FIX: Allow Admin to delete any task
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({ success: false, error: "Not authorized to delete this task" });
-    }
-
-    await task.deleteOne();
-    res.status(200).json({ success: true, data: {} });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-};
-
-export const getMyTasks = async (req, res) => {
-  try {
-    const tasks = await Task.find({ $or: [{ requester: req.user.id }, { helper: req.user.id }] })
-      .populate("requester", "name email")
-      .populate("helper", "name email");
-    res.status(200).json({ success: true, count: tasks.length, data: tasks });
+    res.status(200).json({ success: true, message: "Rating submitted" });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
