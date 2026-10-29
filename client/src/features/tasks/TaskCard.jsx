@@ -3,12 +3,12 @@ import api from "../../lib/api";
 import ChatBox from "./ChatBox";
 import { 
   Button, Card, CardContent, Typography, Chip, Stack, Box, Avatar, 
-  Divider, TextField, Tooltip, IconButton, Dialog, DialogTitle, 
+  Divider, TextField, IconButton, Dialog, DialogTitle, 
   DialogContent, DialogActions 
 } from "@mui/material";
 import { 
-  LocationOn, AccessTime, Star, Gavel, 
-  Phone, Delete, Edit, Directions, Map as MapIcon,
+  LocationOn, Star, Gavel, 
+  Phone, Delete, Edit, 
   Chat as ChatIcon, Close as CloseIcon, Person as PersonIcon, CheckCircle, Payment, DoneAll
 } from "@mui/icons-material";
 import { useState } from "react";
@@ -22,7 +22,6 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
   const [paymentCode, setPaymentCode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
-  const [showMap, setShowMap] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
 
@@ -30,11 +29,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
   const isCreator = currentUserId === task?.requester?._id;
   const isHelper = currentUserId === task?.helper?._id;
   const isAdmin = user?.role === 'admin'; 
-  const hasBid = task?.bids?.find(b => b.helper?._id === currentUserId);
-
-  const lng = task?.location?.coordinates?.[0] || 0;
-  const lat = task?.location?.coordinates?.[1] || 0;
-  const hasValidLocation = lng !== 0 && lat !== 0;
+  const hasBid = task?.bids?.find(b => (b.helper?._id || b.helper) === currentUserId);
 
   const handlePlaceBid = async () => {
     if (!bidAmount) return;
@@ -62,7 +57,6 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     }
   };
 
-  // NEW HANDLER
   const handleMarkWorkDone = async () => {
     setIsProcessing(true);
     try {
@@ -124,20 +118,9 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
   }
 
   return (
-    <Card sx={{ 
-      height: '100%', display: 'flex', flexDirection: 'column',
-      border: task.isUrgent ? '2px solid #d32f2f' : (isAdmin ? '2px dashed #9c27b0' : '1px solid #e0e0e0'), 
-      boxShadow: 1, borderRadius: 2, '&:hover': { boxShadow: 3 }
-    }}>
-      {task.isUrgent && (
-        <Box sx={{ bgcolor: 'error.main', color: 'white', textAlign: 'center', py: 0.8, fontSize: '0.85rem', fontWeight: 'bold' }}>
-           URGENT TASK
-        </Box>
-      )}
-      
+    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid #e0e0e0', boxShadow: 1, borderRadius: 2 }}>
       <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2.5 }}>
         
-        {/* HEADER */}
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
           <Typography variant="h6" fontWeight="bold" lineHeight={1.2}>{task.title}</Typography>
           {getStatusChip()}
@@ -183,22 +166,14 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
             {isCreator && (
               <Box>
                 <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-                  <Gavel fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} /> Bids Received ({task.bids?.length || 0})
+                  <Gavel fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} /> Bids ({task.bids?.length || 0})
                 </Typography>
                 {task.bids?.length > 0 ? (
                   task.bids.map(b => (
                     <Box key={b._id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, bgcolor: 'grey.50', p: 1.5, borderRadius: 1 }}>
                       <Stack direction="row" spacing={1} alignItems="center">
                         <Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>{b.helper?.name?.charAt(0)}</Avatar>
-                        <Box>
-                          <Typography variant="body2" fontWeight="medium">{b.helper?.name}</Typography>
-                          {b.helper?.numReviews > 0 && (
-                            <Stack direction="row" alignItems="center" spacing={0.5}>
-                              <Star style={{ color: '#fbbf24', fontSize: 12 }} />
-                              <Typography variant="caption">{b.helper.rating.toFixed(1)}</Typography>
-                            </Stack>
-                          )}
-                        </Box>
+                        <Typography variant="body2" fontWeight="medium">{b.helper?.name}</Typography>
                       </Stack>
                       <Stack direction="row" spacing={1} alignItems="center">
                         <Typography fontWeight="bold" color="success.main" variant="body2">KES {b.amount}</Typography>
@@ -207,101 +182,64 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
                     </Box>
                   ))
                 ) : (
-                  <Typography variant="caption" color="text.secondary">Waiting for helpers to bid...</Typography>
+                  <Typography variant="caption" color="text.secondary">No bids yet.</Typography>
                 )}
               </Box>
             )}
 
             {!isCreator && !hasBid && (
               <Stack direction="row" spacing={1}>
-                <TextField size="small" type="number" placeholder="Enter amount" value={bidAmount} onChange={(e) => setBidAmount(e.target.value)} fullWidth />
+                <TextField size="small" type="number" placeholder="Bid amount" value={bidAmount} onChange={(e) => setBidAmount(e.target.value)} fullWidth />
                 <Button variant="contained" onClick={handlePlaceBid} disabled={isProcessing || !bidAmount}>Bid</Button>
               </Stack>
             )}
             
             {hasBid && (
-              <Box sx={{ bgcolor: 'success.50', p: 1.5, borderRadius: 1, border: '1px solid #a5d6a7', textAlign: 'center' }}>
-                <Typography variant="body2" color="success.main" fontWeight="bold">✓ Your bid of KES {hasBid.amount} is pending approval.</Typography>
+              <Box sx={{ bgcolor: 'success.50', p: 1.5, borderRadius: 1, textAlign: 'center' }}>
+                <Typography variant="body2" color="success.main" fontWeight="bold">✓ Your bid of KES {hasBid.amount} is pending.</Typography>
               </Box>
             )}
           </Box>
         )}
 
-        {/* CLAIMED / WORK COMPLETED / AWAITING VERIFICATION / COMPLETED */}
+        {/* WORKFLOW */}
         {['claimed', 'work_completed', 'awaiting_verification', 'completed'].includes(task.status) && task.helper && (
           <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #f0f0f0' }}>
-            
             <Box sx={{ bgcolor: 'grey.50', p: 1.5, borderRadius: 2, mb: 2 }}>
-              <Typography variant="caption" fontWeight="bold" color="text.secondary" textTransform="uppercase">Assigned Helper</Typography>
+              <Typography variant="caption" fontWeight="bold" color="text.secondary">HELPER</Typography>
               <Stack direction="row" spacing={1.5} alignItems="center" mt={1}>
                 <Avatar sx={{ width: 36, height: 36, bgcolor: 'info.main' }}>{task.helper?.name?.charAt(0)}</Avatar>
-                <Box flexGrow={1}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <Typography variant="body2" fontWeight="bold">{task.helper?.name}</Typography>
-                    {task.helper?.numReviews > 0 && (
-                      <Chip 
-                        icon={<Star style={{ color: '#fbbf24', fontSize: 14 }} />}
-                        label={`${task.helper.rating.toFixed(1)}`} 
-                        size="small" variant="outlined"
-                        sx={{ height: 20, fontSize: '0.75rem', borderColor: '#fbbf24', color: 'text.secondary' }}
-                      />
-                    )}
-                  </Stack>
-                  
-                  {task.helper?.phone && (
-                    <Typography variant="caption" component="a" href={`tel:${task.helper.phone}`} sx={{ color: 'primary.main', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                      <Phone sx={{ fontSize: 12 }} /> {task.helper.phone}
-                    </Typography>
-                  )}
+                <Box>
+                  <Typography variant="body2" fontWeight="bold">{task.helper?.name}</Typography>
+                  {task.helper?.phone && <Typography variant="caption" component="a" href={`tel:${task.helper.phone}`} sx={{ color: 'primary.main', textDecoration: 'none' }}>{task.helper.phone}</Typography>}
                 </Box>
               </Stack>
             </Box>
 
             <Stack spacing={1.5}>
               {(isCreator || isHelper || isAdmin) && (
-                <Button variant="outlined" color="primary" size="medium" startIcon={<ChatIcon />} onClick={() => setChatOpen(true)} fullWidth sx={{ textTransform: 'none' }}>
-                  Open Chat / Messages
-                </Button>
+                <Button variant="outlined" size="small" startIcon={<ChatIcon />} onClick={() => setChatOpen(true)} fullWidth>Chat</Button>
               )}
 
-              {/* 1. HELPER MARKS WORK DONE */}
               {task.status === 'claimed' && isHelper && (
-                <Button variant="contained" color="primary" startIcon={<DoneAll />} fullWidth onClick={handleMarkWorkDone} disabled={isProcessing} sx={{ textTransform: 'none', fontWeight: 'bold' }}>
-                  Mark Work as Done
-                </Button>
-              )}
-              {task.status === 'claimed' && isCreator && (
-                <Typography variant="caption" color="text.secondary" textAlign="center">Waiting for helper to complete the work...</Typography>
+                <Button variant="contained" color="primary" startIcon={<DoneAll />} fullWidth onClick={handleMarkWorkDone} disabled={isProcessing}>Mark Work as Done</Button>
               )}
 
-              {/* 2. REQUESTER SUBMITS PAYMENT */}
               {task.status === 'work_completed' && isCreator && (
-                <Stack spacing={1} sx={{ mt: 1, bgcolor: 'success.50', p: 1.5, borderRadius: 1, border: '1px solid #a5d6a7' }}>
-                  <Typography variant="caption" color="success.main" fontWeight="bold">Helper has finished the work! Send KES {task.price} via M-Pesa:</Typography>
-                  <TextField size="small" placeholder="e.g. QWE123RTY" value={paymentCode} onChange={(e) => setPaymentCode(e.target.value)} sx={{ bgcolor: 'white' }} />
-                  <Button variant="contained" color="success" startIcon={<Payment />} onClick={handleSubmitPayment} disabled={isProcessing || !paymentCode} sx={{ textTransform: 'none' }}>
-                    Submit Payment Code
-                  </Button>
+                <Stack spacing={1} sx={{ mt: 1, bgcolor: 'success.50', p: 1.5, borderRadius: 1 }}>
+                  <Typography variant="caption" color="success.main" fontWeight="bold">Pay KES {task.price} via M-Pesa:</Typography>
+                  <TextField size="small" placeholder="Transaction code" value={paymentCode} onChange={(e) => setPaymentCode(e.target.value)} sx={{ bgcolor: 'white' }} />
+                  <Button variant="contained" color="success" startIcon={<Payment />} onClick={handleSubmitPayment} disabled={isProcessing || !paymentCode}>Submit Code</Button>
                 </Stack>
               )}
-              {task.status === 'work_completed' && isHelper && (
-                <Typography variant="caption" color="success.main" textAlign="center">You marked the work as done. Waiting for the requester to pay...</Typography>
-              )}
 
-              {/* 3. HELPER CONFIRMS PAYMENT */}
               {task.status === 'awaiting_verification' && isHelper && (
                 <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 2 }}>
-                  <Typography variant="caption" color="text.secondary" display="block" mb={1}>Transaction Code: <strong>{task.paymentCode}</strong></Typography>
-                  <Button variant="contained" color="success" startIcon={<CheckCircle />} fullWidth onClick={handleConfirmPayment} disabled={isProcessing} sx={{ textTransform: 'none' }}>
-                    Confirm Payment Received
-                  </Button>
+                  <Typography variant="caption" display="block" mb={1}>Code: <strong>{task.paymentCode}</strong></Typography>
+                  <Button variant="contained" color="success" startIcon={<CheckCircle />} fullWidth onClick={handleConfirmPayment} disabled={isProcessing}>Confirm Received</Button>
                 </Box>
               )}
-              {task.status === 'awaiting_verification' && isCreator && (
-                <Typography variant="caption" color="text.secondary" textAlign="center">Payment code submitted. Waiting for helper to confirm...</Typography>
-              )}
 
-              {/* 4. COMPLETED */}
               {task.status === 'completed' && (
                  <Chip label="Task Completed & Paid" color="success" sx={{ py: 1, width: '100%', fontWeight: 'bold' }} />
               )}
@@ -309,21 +247,20 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           </Box>
         )}
         
-        {error && <Typography color="error" variant="caption" mt={1} display="block">{error}</Typography>}
+        {error && <Typography color="error" variant="caption" mt={1}>{error}</Typography>}
       </CardContent>
 
-      {/* MODALS */}
       <Dialog open={chatOpen} onClose={() => setChatOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { height: '80vh' } }}>
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          Task Messages
+          Chat
           <IconButton onClick={() => setChatOpen(false)}><CloseIcon /></IconButton>
         </DialogTitle>
         <DialogContent sx={{ p: 0, bgcolor: '#f9f9f9' }}><ChatBox taskId={task._id} /></DialogContent>
       </Dialog>
 
       <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent><Typography>Are you sure you want to delete this task?</Typography></DialogContent>
+        <DialogTitle>Delete Task?</DialogTitle>
+        <DialogContent><Typography>This action cannot be undone.</Typography></DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
           <Button onClick={handleDeleteConfirm} color="error" variant="contained">Delete</Button>
