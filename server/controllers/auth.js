@@ -206,22 +206,19 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-// @desc    Get current user (Includes Reviews, Wallet, Skills)
-// @route   GET /api/auth/me
 export const getMe = async (req, res) => {
   try {
     if (!req.user || !req.user._id) {
       return res.status(401).json({ success: false, error: 'Not authorized' });
     }
 
-    const reviews = await Task.find({
-      helper: req.user._id,
-      isRated: true
-    })
-    .populate('requester', 'name') 
-    .select('title requester ratingValue createdAt updatedAt')
-    .sort({ updatedAt: -1 });
-    console.log(`Found ${reviews.length} reviews for user ${req.user.name}`);
+    const reviews = await Task.find({ helper: req.user._id, isRated: true })
+      .populate('requester', 'name') 
+      .select('title requester ratingValue createdAt updatedAt')
+      .sort({ updatedAt: -1 });
+
+    const completedTasks = await Task.find({ helper: req.user._id, status: 'completed' });
+    const totalEarnings = completedTasks.reduce((sum, task) => sum + (task.price || 0), 0);
 
     res.status(200).json({
       success: true,
@@ -231,7 +228,7 @@ export const getMe = async (req, res) => {
         email: req.user.email,
         phone: req.user.phone,
         role: req.user.role,
-        walletBalance: req.user.walletBalance || 0,
+        walletBalance: totalEarnings, 
         skills: req.user.skills || [],
         rating: req.user.rating || 0,
         numReviews: req.user.numReviews || 0,
@@ -241,10 +238,6 @@ export const getMe = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("GetMe Error:", err);
-    res.status(400).json({
-      success: false,
-      error: 'Failed to fetch profile: ' + err.message,
-    });
+    res.status(500).json({ success: false, error: err.message });
   }
 };
