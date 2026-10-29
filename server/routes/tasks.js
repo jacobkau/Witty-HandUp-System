@@ -1,14 +1,14 @@
 import express from 'express';
 import { 
   getTasks, createTask, placeBid, acceptBid, 
-  submitPayment,  markWorkCompleted, confirmPayment, rateTask, updateTask, deleteTask, getMyTasks
+  submitPayment, markWorkCompleted, confirmPayment, rateTask, updateTask, deleteTask, getMyTasks
 } from '../controllers/tasks.js';
-import { protect } from '../middleware/auth.js'; 
+import { protect, optionalAuth } from '../middleware/auth.js'; 
 
 const router = express.Router();
 
 router.route('/')
-  .get(getTasks)
+  .get(optionalAuth, getTasks)  
   .post(protect, createTask);
 
 router.post('/:id/bid', protect, placeBid);
