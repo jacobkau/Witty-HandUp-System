@@ -3,18 +3,8 @@ import api from "../../lib/api";
 import TaskCard from "./TaskCard";
 import useAuth from "../auth/useAuth";
 import {
-  Box,
-  Typography,
-  CircularProgress,
-  Alert,
-  Tabs,
-  Tab,
-  Pagination,
-  Stack,
-  Paper,
-  TextField,
-  MenuItem,
-  InputAdornment
+  Box, Typography, CircularProgress, Alert, Tabs, Tab, Pagination,
+  Stack, Paper, TextField, MenuItem, InputAdornment, FormControlLabel, Switch
 } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 import { useLocation } from "react-router-dom";
@@ -32,6 +22,7 @@ export default function TaskList() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [showMine, setShowMine] = useState(false); // NEW
 
   useEffect(() => {
     const timerId = setTimeout(() => {
@@ -43,7 +34,7 @@ export default function TaskList() {
 
   useEffect(() => {
     loadTasks();
-  }, [location.key, user, tabValue, page, debouncedSearch, category]);
+  }, [location.key, user, tabValue, page, debouncedSearch, category, showMine]);
 
   const loadTasks = async () => {
     try {
@@ -54,6 +45,7 @@ export default function TaskList() {
       if (user?.role === 'admin') endpoint += "&admin=true";
       if (category !== 'all') endpoint += `&category=${category}`;
       if (debouncedSearch) endpoint += `&search=${encodeURIComponent(debouncedSearch)}`;
+      if (showMine) endpoint += "&mine=true"; // NEW
 
       const res = await api.get(endpoint);
       setTasks(res.data.data || []);
@@ -86,7 +78,7 @@ export default function TaskList() {
         {user?.role === 'admin' ? 'All System Tasks (Admin)' : 'Task Dashboard'}
       </Typography>
 
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={3}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={3} alignItems="center">
         <TextField
           fullWidth size="small" placeholder="Search tasks..." value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -108,6 +100,13 @@ export default function TaskList() {
           <MenuItem value="events">Events</MenuItem>
           <MenuItem value="other">Other</MenuItem>
         </TextField>
+
+        {/* MY TASKS TOGGLE */}
+        <FormControlLabel
+          control={<Switch checked={showMine} onChange={(e) => { setShowMine(e.target.checked); setPage(1); }} color="primary" />}
+          label="Show my tasks/bids"
+          sx={{ whiteSpace: 'nowrap' }}
+        />
       </Stack>
 
       <Paper elevation={0} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
@@ -124,7 +123,6 @@ export default function TaskList() {
         <Box display="flex" justifyContent="center" py={6}><CircularProgress /></Box>
       ) : tasks.length > 0 ? (
         
-    
         <Box 
           display="grid" 
           gridTemplateColumns={{ 
