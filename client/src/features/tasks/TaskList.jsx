@@ -39,13 +39,13 @@ export default function TaskList() {
   const loadTasks = async () => {
     try {
       setLoading(true);
+      // Tab 0 = Open, Tab 1 = In Progress (Claimed/Work Completed/Awaiting Verification), Tab 2 = Completed
       let statusParam = tabValue === 0 ? "open" : tabValue === 1 ? "claimed" : "completed";
       let endpoint = `/tasks?page=${page}&limit=12&status=${statusParam}`;
       
       if (user?.role === 'admin') endpoint += "&admin=true";
       if (category !== 'all') endpoint += `&category=${category}`;
       if (debouncedSearch) endpoint += `&search=${encodeURIComponent(debouncedSearch)}`;
-      // Only add mine=true if user is logged in
       if (showMine && user) endpoint += "&mine=true";
 
       const res = await api.get(endpoint);
@@ -102,7 +102,6 @@ export default function TaskList() {
           <MenuItem value="other">Other</MenuItem>
         </TextField>
 
-        {/* Only show "My Tasks" if user is logged in */}
         {user && (
           <FormControlLabel
             control={<Switch checked={showMine} onChange={(e) => { setShowMine(e.target.checked); setPage(1); }} color="primary" />}
@@ -115,7 +114,7 @@ export default function TaskList() {
       <Paper elevation={0} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth" textColor="primary" indicatorColor="primary">
           <Tab label="Open Tasks" />
-          <Tab label="Claimed Tasks" />
+          <Tab label="In Progress" />
           <Tab label="Completed" />
         </Tabs>
       </Paper>
