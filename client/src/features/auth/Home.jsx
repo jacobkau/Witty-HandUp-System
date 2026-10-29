@@ -1,30 +1,142 @@
 import { Link } from 'react-router-dom';
+import useAuth from './useAuth'; 
+import { 
+  Box, Typography, Button, Container, Grid, Paper, Stack, Chip 
+} from '@mui/material';
+import { 
+  Gavel, AccountBalanceWallet, Work, Chat, 
+  Security, Star, CheckCircle, ArrowForward 
+} from '@mui/icons-material';
 
 export default function Home() {
+  const { user } = useAuth();
+
   return (
-    <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-      <h1 className="text-5xl font-extrabold text-blue-600 mb-6">
-        Witty HandUp System
-      </h1>
-      <p className="text-xl text-gray-600 max-w-2xl mb-8">
-        A community-driven task management platform. Post tasks you need help with, 
-        claim tasks posted by others, and build a stronger community together.
-      </p>
+    <Box sx={{ pb: 10 }}>
       
-      <div className="flex gap-4">
-        <Link 
-          to="/register" 
-          className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-md shadow hover:bg-blue-700 transition-colors"
-        >
-          Get Started
-        </Link>
-        <Link 
-          to="/login" 
-          className="px-6 py-3 bg-white text-blue-600 border border-blue-600 font-semibold rounded-md shadow-sm hover:bg-blue-50 transition-colors"
-        >
-          Sign In
-        </Link>
-      </div>
-    </div>
+      {/* HERO SECTION */}
+      <Box sx={{ 
+        bgcolor: 'primary.main', 
+        color: 'white', 
+        pt: { xs: 10, md: 16 }, 
+        pb: { xs: 10, md: 16 }, 
+        textAlign: 'center',
+        borderBottomLeftRadius: { xs: 30, md: 80 },
+        borderBottomRightRadius: { xs: 30, md: 80 },
+        backgroundImage: 'linear-gradient(135deg, #1565c0 0%, #0d47a1 100%)'
+      }}>
+        <Container maxWidth="md">
+          <Chip 
+            label="Trusted by the Community" 
+            icon={<Security style={{ color: '#fbbf24' }} />} 
+            sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'white', mb: 3, fontWeight: 'bold' }} 
+          />
+          <Typography variant="h2" fontWeight="800" gutterBottom sx={{ fontSize: { xs: '2.5rem', md: '4rem' } }}>
+            Get Help. Give Help. <br />
+            <span style={{ color: '#fbbf24' }}>Earn Money.</span>
+          </Typography>
+          <Typography variant="h6" sx={{ opacity: 0.9, mb: 5, maxWidth: 600, mx: 'auto', fontWeight: 400 }}>
+            Witty HandUp is the easiest way to delegate your errands and tasks. 
+            Post a job, receive bids from skilled helpers, and pay securely through escrow.
+          </Typography>
+          
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
+            {user ? (
+              <Button component={Link} to="/tasks" variant="contained" size="large" 
+                sx={{ bgcolor: '#fbbf24', color: '#000', fontWeight: 'bold', '&:hover': { bgcolor: '#f59e0b' }, px: 4, py: 1.5 }}>
+                Go to Dashboard
+              </Button>
+            ) : (
+              <>
+                <Button component={Link} to="/register" variant="contained" size="large" 
+                  sx={{ bgcolor: '#fbbf24', color: '#000', fontWeight: 'bold', '&:hover': { bgcolor: '#f59e0b' }, px: 4, py: 1.5 }}>
+                  Post a Task
+                </Button>
+                <Button component={Link} to="/register" variant="outlined" size="large" 
+                  endIcon={<ArrowForward />}
+                  sx={{ color: 'white', borderColor: 'white', '&:hover': { borderColor: '#fbbf24', color: '#fbbf24' }, px: 4, py: 1.5 }}>
+                  Become a Helper
+                </Button>
+              </>
+            )}
+          </Stack>
+        </Container>
+      </Box>
+
+      {/* FEATURES SECTION */}
+      <Container maxWidth="lg" sx={{ mt: -6 }}>
+        <Grid container spacing={4}>
+          {[
+            { title: "Live Bidding System", desc: "Post your budget and let helpers negotiate. Pick the best offer.", icon: <Gavel />, color: "#2196f3" },
+            { title: "Secure Escrow Wallet", desc: "Your money is held safely. Funds are only released when the job is done.", icon: <AccountBalanceWallet />, color: "#4caf50" },
+            { title: "Skill Matching", desc: "Get instantly notified when tasks matching your skills are posted nearby.", icon: <Work />, color: "#ff9800" },
+            { title: "In-App Chat", desc: "Coordinate directly with your helper without sharing personal numbers.", icon: <Chat />, color: "#9c27b0" }
+          ].map((feature, index) => (
+            <Grid item xs={12} sm={6} md={3} key={index}>
+              <Paper elevation={3} sx={{ p: 4, height: '100%', textAlign: 'center', borderRadius: 3, transition: '0.3s', '&:hover': { transform: 'translateY(-5px)' } }}>
+                <Box sx={{ 
+                  width: 60, height: 60, borderRadius: '50%', bgcolor: `${feature.color}15`, color: feature.color, 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 
+                }}>
+                  {feature.icon}
+                </Box>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>{feature.title}</Typography>
+                <Typography variant="body2" color="text.secondary">{feature.desc}</Typography>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+
+      {/* HOW IT WORKS SECTION */}
+      <Container maxWidth="md" sx={{ mt: 12 }}>
+        <Typography variant="h3" fontWeight="bold" textAlign="center" gutterBottom>
+          How It Works
+        </Typography>
+        <Typography variant="subtitle1" textAlign="center" color="text.secondary" mb={6}>
+          Getting help or earning money takes just a few clicks.
+        </Typography>
+
+        <Stack spacing={4}>
+          {[
+            { step: "1", title: "Post Your Task", desc: "Describe what you need done, set your budget, and pin your location on the map." },
+            { step: "2", title: "Receive Bids", desc: "Local helpers will review your task and submit their price offers." },
+            { step: "3", title: "Accept & Chat", desc: "Pick the best helper, pay into escrow, and coordinate via our built-in chat." },
+            { step: "4", title: "Complete & Rate", desc: "Once the task is done, the money is released, and you can rate the helper." }
+          ].map((item, index) => (
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems="center" key={index}>
+              <Box sx={{ 
+                width: 50, height: 50, flexShrink: 0, borderRadius: '50%', bgcolor: 'primary.main', color: 'white', 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' 
+              }}>
+                {item.step}
+              </Box>
+              <Box textAlign={{ xs: 'center', sm: 'left' }}>
+                <Typography variant="h6" fontWeight="bold">{item.title}</Typography>
+                <Typography variant="body1" color="text.secondary">{item.desc}</Typography>
+              </Box>
+            </Stack>
+          ))}
+        </Stack>
+      </Container>
+
+      {/* CTA BOTTOM */}
+      {!user && (
+        <Container maxWidth="md" sx={{ mt: 12, textAlign: 'center' }}>
+          <Paper elevation={0} sx={{ p: 6, bgcolor: 'grey.50', borderRadius: 4, border: '1px solid #e0e0e0' }}>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              Ready to get started?
+            </Typography>
+            <Typography variant="body1" color="text.secondary" mb={4}>
+              Join thousands of users saving time and earning money on Witty HandUp.
+            </Typography>
+            <Button component={Link} to="/register" variant="contained" size="large" disableElevation sx={{ px: 6, py: 1.5, fontWeight: 'bold' }}>
+              Create a Free Account
+            </Button>
+          </Paper>
+        </Container>
+      )}
+
+    </Box>
   );
 }
