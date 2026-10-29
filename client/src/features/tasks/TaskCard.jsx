@@ -1,20 +1,37 @@
 import useAuth from "../auth/useAuth";
 import api from "../../lib/api";
 import ChatBox from "./ChatBox";
-import { Button, Card, CardContent, Typography, Chip, Stack, Box, Avatar, Divider, TextField } from "@mui/material";
-import { CheckCircle, Pending, LocationOn, AccessTime, Star, Gavel } from "@mui/icons-material";
-import { useState } from "react";
+import { 
+  Button, Card, CardContent, Typography, Chip, Stack, Box, Avatar, 
+  Divider, TextField, Tooltip, IconButton, Dialog, DialogTitle, 
+  DialogContent, DialogActions 
+} from "@mui/material";
+import { 
+  CheckCircle, Pending, LocationOn, AccessTime, Star, Gavel, 
+  Phone, Email, Delete, Edit, Directions, Map as MapIcon 
+} from "@mui/icons-material";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
-export default function TaskCard({ task, onUpdate }) {
+export default function TaskCard({ task, onUpdate, onDelete }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  
   const [bidAmount, setBidAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [showMap, setShowMap] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const currentUserId = user?._id || user?.id;
   const isCreator = currentUserId === task?.requester?._id;
   const isHelper = currentUserId === task?.helper?._id;
   const hasBid = task?.bids?.find(b => b.helper?._id === currentUserId);
+
+  // Map Coordinates
+  const lng = task?.location?.coordinates?.[0] || 0;
+  const lat = task?.location?.coordinates?.[1] || 0;
+  const hasValidLocation = lng !== 0 && lat !== 0;
 
   const handlePlaceBid = async () => {
     if (!bidAmount) return;
@@ -23,7 +40,11 @@ export default function TaskCard({ task, onUpdate }) {
       const res = await api.post(`/tasks/${task._id}/bid`, { amount: Number(bidAmount), message: "I can do this!" });
       onUpdate(res.data.data);
       setBidAmount('');
-    } catch (err) { setError(err.response?.data?.error || "Bid failed"); } finally { setIsProcessing(false); }
+    } catch (err) { 
+      setError(err.response?.data?.error || "Bid failed"); 
+    } finally { 
+      setIsProcessing(false); 
+    }
   };
 
   const handleAcceptBid = async (bidId) => {
@@ -31,7 +52,11 @@ export default function TaskCard({ task, onUpdate }) {
     try {
       const res = await api.put(`/tasks/${task._id}/accept-bid`, { bidId });
       onUpdate(res.data.data);
-    } catch (err) { setError(err.response?.data?.error || "Failed to accept bid"); } finally { setIsProcessing(false); }
+    } catch (err) { 
+      setError(err.response?.data?.error || "Failed to accept bid"); 
+    } finally { 
+      setIsProcessing(false); 
+    }
   };
 
   const handleComplete = async () => {
@@ -39,79 +64,259 @@ export default function TaskCard({ task, onUpdate }) {
     try {
       const res = await api.put(`/tasks/${task._id}/complete`);
       onUpdate(res.data.data);
-    } catch (err) { setError(err.response?.data?.error || "Failed to complete"); } finally { setIsProcessing(false); }
+    } catch (err) { 
+      setError(err.response?.data?.error || "Failed to complete"); 
+    } finally { 
+      setIsProcessing(false); 
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    setIsProcessing(true);
+    try {
+      await api.delete(`/tasks/${task._id}`);
+      if (onDelete) onDelete(task._id);
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to delete task");
+    } finally {
+      setIsProcessing(false);
+      setDeleteConfirmOpen(false);
+    }
   };
 
   return (
-    <Card sx={{ mb: 2, border: task.isUrgent ? '2px solid red' : '1px solid #e0e0e0' }}>
-      {task.isUrgent && <Box sx={{ bgcolor: 'error.main', color: 'white', textAlign: 'center', py: 0.5, fontSize: '0.8rem', fontWeight: 'bold' }}>🚨 URGENT TASK</Box>}
+    <Card sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: 'column',
+      border: task.isUrgent ? '2px solid #d32f2f' : '1px solid #e0e0e0',
+      boxShadow: 1,
+      '&:hover': { boxShadow: 3 }
+    }}>
+      {/* URGENT BANNER */}
+      {task.isUrgent && (
+        <Box sx={{ bgcolor: 'error.main', color: 'white', textAlign: 'center', py: 0.5, fontSize: '0.8rem', fontWeight: 'bold' }}>
+          🚨 URGENT TASK
+        </Box>
+      )}
       
-      <CardContent>
-        <Stack direction="row" justifyContent="space-between">
+      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+        
+        {/* HEADER SECTION */}
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
           <Box>
-            <Typography variant="h6" fontWeight="bold">{task.title}</Typography>
-            <Stack direction="row" spacing={1} mt={0.5}>
+            <Typography variant="h6" fontWeight="bold" lineHeight={1.2}>
+              {task.title}
+            </Typography>
+            <Stack direction="row" spacing={1} mt={1} flexWrap="wrap">
               <Chip label={`KES ${task.price}`} color="success" size="small" sx={{ fontWeight: 'bold' }} />
               <Chip label={task.category.toUpperCase()} size="small" variant="outlined" />
-              <Chip icon={<AccessTime />} label={new Date(task.createdAt).toLocaleDateString()} size="small" />
+              <Chip icon={<AccessTime fontSize="small" />} label={new Date(task.createdAt).toLocaleDateString()} size="small" />
             </Stack>
           </Box>
-          <Chip label={task.status.toUpperCase()} color={task.status === 'open' ? 'warning' : task.status === 'claimed' ? 'info' : 'success'} />
+          <Chip 
+            label={task.status.toUpperCase()} 
+            color={task.status === 'open' ? 'warning' : task.status === 'claimed' ? 'info' : 'success'} 
+            size="small"
+          />
         </Stack>
 
-        <Typography variant="body2" sx={{ my: 2 }}>{task.description}</Typography>
-        <Stack direction="row" spacing={1} alignItems="center" mb={2}>
-          <LocationOn fontSize="small" color="action" />
-          <Typography variant="caption" color="text.secondary">{task.location.address}</Typography>
+        {/* MENU (Creator Only) */}
+        {isCreator && (
+          <Stack direction="row" spacing={1} justifyContent="flex-end" mt={1}>
+            <Tooltip title="Edit Task">
+              <IconButton size="small" onClick={() => navigate(`/tasks/edit/${task._id}`, { state: { taskData: task } })} disabled={task.status !== 'open'}>
+                <Edit fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete Task">
+              <IconButton size="small" color="error" onClick={() => setDeleteConfirmOpen(true)}>
+                <Delete fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        )}
+
+        <Divider sx={{ my: 2 }} />
+
+        {/* DESCRIPTION */}
+        <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, mb: 2 }}>
+          {task.description}
+        </Typography>
+
+        {/* LOCATION & CONTACT */}
+        <Stack spacing={1} mb={2}>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <LocationOn fontSize="small" color="action" />
+            <Typography variant="caption" color="text.secondary" noWrap>
+              {task.location.address || "Coordinates pinned"}
+            </Typography>
+          </Stack>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Avatar sx={{ width: 20, height: 20, fontSize: 10, bgcolor: 'primary.main' }}>
+              {task.requester?.name?.charAt(0)}
+            </Avatar>
+            <Typography variant="caption" color="text.secondary">
+              Posted by {task.requester?.name}
+            </Typography>
+            {task.requester?.phone && (
+              <Tooltip title="Call Creator">
+                <IconButton size="small" href={`tel:${task.requester.phone}`} color="success">
+                  <Phone sx={{ fontSize: 14 }} />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Stack>
         </Stack>
 
-        {/* CREATOR VIEW: SEE BIDS */}
-        {isCreator && task.status === 'open' && (
-          <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 2 }}>
-            <Typography variant="subtitle2" fontWeight="bold" gutterBottom><Gavel fontSize="small"/> Bids Received ({task.bids.length})</Typography>
-            {task.bids.map(b => (
-              <Box key={b._id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, bgcolor: 'white', p: 1, borderRadius: 1 }}>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Avatar sx={{ width: 24, height: 24 }}>{b.helper?.name?.charAt(0)}</Avatar>
-                  <Typography variant="body2">{b.helper?.name}</Typography>
-                  {b.helper?.numReviews > 0 && <Chip icon={<Star style={{ color: 'gold', fontSize: 12 }} />} label={b.helper.rating.toFixed(1)} size="small" />}
-                </Stack>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Typography fontWeight="bold" color="success.main">KES {b.amount}</Typography>
-                  <Button size="small" variant="contained" color="primary" onClick={() => handleAcceptBid(b._id)} disabled={isProcessing}>Accept</Button>
-                </Stack>
+        {/* MAP TOGGLE */}
+        {hasValidLocation && (
+          <Box mb={2}>
+            <Stack direction="row" spacing={1}>
+              <Button variant="outlined" size="small" startIcon={<MapIcon />} onClick={() => setShowMap(!showMap)}>
+                {showMap ? "Hide Map" : "Map"}
+              </Button>
+              <Button 
+                variant="contained" size="small" color="secondary" startIcon={<Directions />}
+                href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
+                target="_blank" rel="noopener noreferrer" disableElevation
+              >
+                Directions
+              </Button>
+            </Stack>
+
+            {showMap && (
+              <Box sx={{ mt: 1, borderRadius: 2, overflow: 'hidden', border: '1px solid #e0e0e0' }}>
+                <iframe
+                  width="100%" height="150" frameBorder="0" style={{ border: 0 }}
+                  src={`https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                  allowFullScreen title="Task Location"
+                ></iframe>
               </Box>
-            ))}
-            {task.bids.length === 0 && <Typography variant="caption">No bids yet.</Typography>}
+            )}
           </Box>
         )}
 
-        {/* HELPER VIEW: PLACE BID */}
-        {!isCreator && task.status === 'open' && !hasBid && (
-          <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-            <TextField size="small" type="number" label="Your Bid (KES)" value={bidAmount} onChange={(e) => setBidAmount(e.target.value)} />
-            <Button variant="contained" onClick={handlePlaceBid} disabled={isProcessing}>Place Bid</Button>
+        {/* BIDDING LOGIC */}
+        {task.status === 'open' && (
+          <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #f0f0f0' }}>
+            
+            {/* CREATOR VIEW: SEE BIDS */}
+            {isCreator && (
+              <Box>
+                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                  <Gavel fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} /> 
+                  Bids ({task.bids?.length || 0})
+                </Typography>
+                {task.bids?.length > 0 ? (
+                  task.bids.map(b => (
+                    <Box key={b._id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, bgcolor: 'grey.50', p: 1, borderRadius: 1 }}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>{b.helper?.name?.charAt(0)}</Avatar>
+                        <Box>
+                          <Typography variant="body2" fontWeight="medium">{b.helper?.name}</Typography>
+                          {b.helper?.numReviews > 0 && (
+                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                              <Star style={{ color: '#fbbf24', fontSize: 12 }} />
+                              <Typography variant="caption">{b.helper.rating.toFixed(1)}</Typography>
+                            </Stack>
+                          )}
+                        </Box>
+                      </Stack>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography fontWeight="bold" color="success.main">KES {b.amount}</Typography>
+                        <Button size="small" variant="contained" onClick={() => handleAcceptBid(b._id)} disabled={isProcessing}>
+                          Accept
+                        </Button>
+                      </Stack>
+                    </Box>
+                  ))
+                ) : (
+                  <Typography variant="caption" color="text.secondary">Waiting for helpers to bid...</Typography>
+                )}
+              </Box>
+            )}
+
+            {/* HELPER VIEW: PLACE BID */}
+            {!isCreator && !hasBid && (
+              <Stack direction="row" spacing={1}>
+                <TextField 
+                  size="small" 
+                  type="number" 
+                  label="Your Bid (KES)" 
+                  value={bidAmount} 
+                  onChange={(e) => setBidAmount(e.target.value)} 
+                  fullWidth
+                />
+                <Button variant="contained" onClick={handlePlaceBid} disabled={isProcessing || !bidAmount}>
+                  Bid
+                </Button>
+              </Stack>
+            )}
+            
+            {hasBid && (
+              <Box sx={{ bgcolor: 'success.50', p: 1, borderRadius: 1, border: '1px solid #a5d6a7' }}>
+                <Typography variant="body2" color="success.main" fontWeight="bold">
+                  ✓ Your bid of KES {hasBid.amount} is pending.
+                </Typography>
+              </Box>
+            )}
           </Box>
         )}
-        
-        {hasBid && task.status === 'open' && (
-          <Typography variant="body2" color="success.main" sx={{ mt: 2 }}>You have placed a bid of KES {hasBid.amount}. Waiting for approval.</Typography>
+
+        {/* CLAIMED STATE LOGIC */}
+        {task.status === 'claimed' && (
+          <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #f0f0f0' }}>
+            <Stack direction="row" spacing={1} alignItems="center" mb={2}>
+              <Avatar sx={{ width: 32, height: 32, bgcolor: 'info.main' }}>{task.helper?.name?.charAt(0)}</Avatar>
+              <Box>
+                <Typography variant="body2" fontWeight="bold">Helper: {task.helper?.name}</Typography>
+                {task.helper?.phone && (
+                  <Typography variant="caption" component="a" href={`tel:${task.helper.phone}`} sx={{ color: 'primary.main', textDecoration: 'none' }}>
+                    {task.helper.phone}
+                  </Typography>
+                )}
+              </Box>
+            </Stack>
+
+            {isHelper && (
+              <Button variant="contained" color="success" fullWidth onClick={handleComplete} disabled={isProcessing}>
+                Mark as Complete
+              </Button>
+            )}
+            
+            {isCreator && (
+              <Typography variant="caption" color="text.secondary">
+                Waiting for the helper to complete the task.
+              </Typography>
+            )}
+          </Box>
         )}
 
-        {/* MARK COMPLETE (HELPER) */}
-        {isHelper && task.status === 'claimed' && (
-          <Button variant="contained" color="success" fullWidth sx={{ mt: 2 }} onClick={handleComplete} disabled={isProcessing}>
-            Mark as Complete
-          </Button>
-        )}
-
-        {/* CHAT */}
+        {/* CHAT (Only if claimed or completed) */}
         {task.status !== 'open' && (isCreator || isHelper) && (
-          <Box mt={3}><ChatBox taskId={task._id} /></Box>
+          <Box mt={2}>
+            <ChatBox taskId={task._id} />
+          </Box>
         )}
         
-        {error && <Typography color="error" variant="caption">{error}</Typography>}
+        {error && <Typography color="error" variant="caption" mt={1} display="block">{error}</Typography>}
+      
       </CardContent>
+
+      {/* DELETE CONFIRMATION DIALOG */}
+      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this task? This action cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteConfirmOpen(false)} disabled={isProcessing}>Cancel</Button>
+          <Button onClick={handleDeleteConfirm} color="error" variant="contained" disabled={isProcessing}>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 }
