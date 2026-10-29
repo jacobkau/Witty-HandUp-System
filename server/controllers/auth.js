@@ -204,6 +204,7 @@ export const resetPassword = async (req, res) => {
 };
 
 // @desc    Get current user (Includes Reviews, Wallet, Skills)
+// @route   GET /api/auth/me
 export const getMe = async (req, res) => {
   try {
     if (!req.user || !req.user._id) {
@@ -214,9 +215,10 @@ export const getMe = async (req, res) => {
       helper: req.user._id,
       isRated: true
     })
-    .populate('requester', 'name')
+    .populate('requester', 'name') 
     .select('title requester ratingValue createdAt updatedAt')
     .sort({ updatedAt: -1 });
+    console.log(`Found ${reviews.length} reviews for user ${req.user.name}`);
 
     res.status(200).json({
       success: true,
@@ -232,7 +234,7 @@ export const getMe = async (req, res) => {
         numReviews: req.user.numReviews || 0,
         createdAt: req.user.createdAt,
         updatedAt: req.user.updatedAt,
-        reviews: reviews
+        reviews: reviews 
       },
     });
   } catch (err) {
