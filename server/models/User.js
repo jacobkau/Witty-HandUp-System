@@ -16,7 +16,8 @@ const UserSchema = new mongoose.Schema({
   rating: { type: Number, default: 0 },
   numReviews: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  updatedAt: { type: Date, default: Date.now },
+   isActive: { type: Boolean, default: true }, 
 });
 
 UserSchema.pre('save', async function(next) {
