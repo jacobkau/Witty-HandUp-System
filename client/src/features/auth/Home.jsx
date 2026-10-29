@@ -88,12 +88,17 @@ export default function Home() {
         </Grid>
       </Container>
 
-      {/* HOW IT WORKS & CTA SIDE-BY-SIDE */}
-      <Container maxWidth="md" sx={{ mt: 12 }}>
-        <Grid container spacing={6} alignItems="center">
+      {/* HOW IT WORKS & CTA SIDE-BY-SIDE (USING FLEXBOX) */}
+      <Container maxWidth="lg" sx={{ mt: 12 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', md: 'row' }, // Stacks on mobile, side-by-side on md
+          gap: 6, 
+          alignItems: 'stretch' 
+        }}>
           
           {/* Left Side: How It Works */}
-          <Grid item xs={12} md={6}>
+          <Box sx={{ flex: 1 }}>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
               How It Works
             </Typography>
@@ -122,10 +127,10 @@ export default function Home() {
                 </Stack>
               ))}
             </Stack>
-          </Grid>
+          </Box>
 
           {/* Right Side: CTA Box */}
-          <Grid item xs={12} md={6}>
+          <Box sx={{ flex: 1, display: 'flex' }}>
             <Paper elevation={0} sx={{ 
               p: 5, 
               borderRadius: 4, 
@@ -134,7 +139,8 @@ export default function Home() {
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
-              textAlign: 'center'
+              textAlign: 'center',
+              width: '100%'
             }}>
               <Typography variant="h4" fontWeight="bold" gutterBottom>
                 Ready to get started?
@@ -154,9 +160,9 @@ export default function Home() {
                 </Button>
               )}
             </Paper>
-          </Grid>
+          </Box>
 
-        </Grid>
+        </Box>
       </Container>
 
     </Box>
