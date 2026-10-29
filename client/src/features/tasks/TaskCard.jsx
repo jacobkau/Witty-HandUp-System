@@ -28,7 +28,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
   const currentUserId = user?._id || user?.id;
   const isCreator = currentUserId === task?.requester?._id;
   const isHelper = currentUserId === task?.helper?._id;
-  const isAdmin = user?.role === 'admin'; // ✅ Ensure Admin check is here
+  const isAdmin = user?.role === 'admin'; 
   const hasBid = task?.bids?.find(b => b.helper?._id === currentUserId);
 
   const lng = task?.location?.coordinates?.[0] || 0;
@@ -99,7 +99,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
       {/* URGENT BANNER */}
       {task.isUrgent && (
         <Box sx={{ bgcolor: 'error.main', color: 'white', textAlign: 'center', py: 0.8, fontSize: '0.85rem', fontWeight: 'bold' }}>
-          🚨 URGENT TASK
+           URGENT TASK
         </Box>
       )}
       
@@ -125,7 +125,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           <Chip icon={<AccessTime fontSize="small" />} label={new Date(task.createdAt).toLocaleDateString()} size="small" />
         </Stack>
 
-        {/* EDIT/DELETE (Creator OR Admin) */}
+        {/* EDIT/DELETE */}
         {(isCreator || isAdmin) && (
           <Stack direction="row" spacing={1} justifyContent="flex-end" mb={1}>
             <Tooltip title="Edit Task">
@@ -302,7 +302,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
 
             {/* ACTION BUTTONS (Bottom) */}
             <Stack spacing={1.5}>
-              {/* Chat Button (Only if claimed/completed) */}
+              {/* Chat Button  */}
               {(isCreator || isHelper || isAdmin) && (
                 <Button 
                   variant="outlined" color="primary" size="medium" startIcon={<ChatIcon />} 
@@ -312,7 +312,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
                 </Button>
               )}
 
-              {/* Mark Complete Button (Helper Only) */}
+              {/* Mark Complete Button */}
               {isHelper && task.status === 'claimed' && (
                 <Button variant="contained" color="success" fullWidth size="large" onClick={handleComplete} disabled={isProcessing} disableElevation sx={{ textTransform: 'none', fontWeight: 'bold' }}>
                   {isProcessing ? 'Completing...' : 'Mark as Complete'}
