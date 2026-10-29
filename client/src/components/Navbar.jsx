@@ -5,7 +5,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import { Badge, IconButton } from '@mui/material';
-import api from "../lib/api"; // ✅ FIXED IMPORT PATH
+import api from "../lib/api"; 
 
 export default function Navbar() {
   const { user, logout } = useAuth();
