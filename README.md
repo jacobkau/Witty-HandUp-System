@@ -147,16 +147,16 @@ npm run dev
 
 ---
 
-## 👨‍💻 Developer
+## Developer
 
 **Jacob Kau**  
 *Full-Stack Software Engineer*
 
 I designed and engineered this entire system from the ground up, including the RESTful API, real-time WebSocket architecture, secure state management, and responsive frontend.
 
-*   **GitHub:** [https://github.com/jacobkau](https://github.com/jacobkau)
-*   **LinkedIn:** [https://www.linkedin.com/in/jacob-mwambwa-8b7296362](https://www.linkedin.com/in/jacob-mwambwa-8b7296362)
-*   **Email:** wittyhighbrowtechnologies@gmail.com
+*   **GitHub:** [Github link](https://github.com/jacobkau)
+*   **LinkedIn:** [Linkedin Link](https://www.linkedin.com/in/jacob-mwambwa-8b7296362)
+*   **Email:** [kaujacob4@gmail.com](mailto:kaujacob4@gmail.com)
 
 ---
 *© 2026 Witty Highbrow Technologies. All Rights Reserved.*
