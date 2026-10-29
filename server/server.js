@@ -6,6 +6,7 @@ import { initSocket } from './sockets/socket.js';
 import messageRoutes from './routes/messages.js';
 import authRoutes from './routes/auth.js';
 import taskRoutes from './routes/tasks.js';
+import adminRoutes from './routes/admin.js';
 
 dotenv.config();
 
@@ -37,6 +38,7 @@ mongoose.connect(process.env.MONGO_URI)
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/', (req, res) => {
   res.send('HandUp Server is Running');
