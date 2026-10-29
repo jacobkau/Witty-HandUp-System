@@ -110,7 +110,31 @@ export const placeBid = async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 };
+// @desc    Helper marks work as completed
+export const markWorkCompleted = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ success: false, error: "Task not found" });
+    if (task.helper.toString() !== req.user.id) return res.status(403).json({ success: false, error: "Only the helper can mark work as done" });
+    if (task.status !== "claimed") return res.status(400).json({ success: false, error: "Task is not in claimed state" });
 
+    task.status = "work_completed";
+    await task.save();
+
+    // Notify Requester
+    await Notification.create({
+      recipient: task.requester,
+      sender: req.user.id,
+      task: task._id,
+      type: 'payment_submitted',
+      message: `The helper has completed the work for "${task.title}". Please pay to proceed.`,
+    });
+
+    res.status(200).json({ success: true, data: task });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
 // @desc    Accept a bid
 export const acceptBid = async (req, res) => {
   try {
