@@ -11,6 +11,13 @@ import {
 export default function Home() {
   const { user } = useAuth();
 
+  const features = [
+    { title: "Live Bidding System", desc: "Post your budget and let helpers negotiate. Pick the best offer.", icon: <Gavel />, color: "#2196f3" },
+    { title: "Manual Secure Payments", desc: "Pay directly via M-Pesa. Submit the transaction code to verify.", icon: <AccountBalanceWallet />, color: "#4caf50" },
+    { title: "Skill Matching", desc: "Get instantly notified when tasks matching your skills are posted nearby.", icon: <Work />, color: "#ff9800" },
+    { title: "In-App Chat", desc: "Coordinate directly with your helper without sharing personal numbers.", icon: <Chat />, color: "#9c27b0" }
+  ];
+
   return (
     <Box sx={{ pb: 10 }}>
       
@@ -37,7 +44,7 @@ export default function Home() {
           </Typography>
           <Typography variant="h6" sx={{ opacity: 0.9, mb: 5, maxWidth: 600, mx: 'auto', fontWeight: 400 }}>
             Witty HandUp is the easiest way to delegate your errands and tasks. 
-            Post a job, receive bids from skilled helpers, and pay securely through escrow.
+            Post a job, receive bids from skilled helpers, and pay securely.
           </Typography>
           
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
@@ -65,18 +72,24 @@ export default function Home() {
 
       {/* FEATURES SECTION */}
       <Container maxWidth="lg" sx={{ mt: -6 }}>
-        <Grid container spacing={4}>
-          {[
-            { title: "Live Bidding System", desc: "Post your budget and let helpers negotiate. Pick the best offer.", icon: <Gavel />, color: "#2196f3" },
-            { title: "Secure Escrow Wallet", desc: "Your money is held safely. Funds are only released when the job is done.", icon: <AccountBalanceWallet />, color: "#4caf50" },
-            { title: "Skill Matching", desc: "Get instantly notified when tasks matching your skills are posted nearby.", icon: <Work />, color: "#ff9800" },
-            { title: "In-App Chat", desc: "Coordinate directly with your helper without sharing personal numbers.", icon: <Chat />, color: "#9c27b0" }
-          ].map((feature, index) => (
-            <Grid item xs={12} sm={6} md={3} key={index}>
-              <Paper elevation={3} sx={{ p: 4, height: '100%', textAlign: 'center', borderRadius: 3, transition: '0.3s', '&:hover': { transform: 'translateY(-5px)' } }}>
+        <Grid container spacing={4} alignItems="stretch">
+          {features.map((feature, index) => (
+            <Grid item xs={12} sm={6} md={3} key={index} sx={{ display: 'flex' }}>
+              {/* height: 100% and display: flex ensures equal heights across the row */}
+              <Paper elevation={3} sx={{ 
+                p: 4, 
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center', 
+                borderRadius: 3, 
+                transition: '0.3s', 
+                '&:hover': { transform: 'translateY(-5px)' } 
+              }}>
                 <Box sx={{ 
                   width: 60, height: 60, borderRadius: '50%', bgcolor: `${feature.color}15`, color: feature.color, 
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 
                 }}>
                   {feature.icon}
                 </Box>
@@ -88,11 +101,11 @@ export default function Home() {
         </Grid>
       </Container>
 
-      {/* HOW IT WORKS & CTA SIDE-BY-SIDE (USING FLEXBOX) */}
+      {/* HOW IT WORKS & CTA SIDE-BY-SIDE */}
       <Container maxWidth="lg" sx={{ mt: 12 }}>
         <Box sx={{ 
           display: 'flex', 
-          flexDirection: { xs: 'column', md: 'row' }, // Stacks on mobile, side-by-side on md
+          flexDirection: { xs: 'column', md: 'row' }, 
           gap: 6, 
           alignItems: 'stretch' 
         }}>
@@ -110,8 +123,8 @@ export default function Home() {
               {[
                 { step: "1", title: "Post Your Task", desc: "Describe what you need done, set your budget, and pin your location." },
                 { step: "2", title: "Receive Bids", desc: "Local helpers will review your task and submit their price offers." },
-                { step: "3", title: "Accept & Chat", desc: "Pick the best helper, pay into escrow, and coordinate via chat." },
-                { step: "4", title: "Complete & Rate", desc: "Once done, money is released, and you can rate the helper." }
+                { step: "3", title: "Accept & Chat", desc: "Pick the best helper, agree on terms, and coordinate via chat." },
+                { step: "4", title: "Complete & Rate", desc: "Once done, pay via M-Pesa, verify the code, and rate the helper." }
               ].map((item, index) => (
                 <Stack direction="row" spacing={2} alignItems="flex-start" key={index}>
                   <Box sx={{ 
