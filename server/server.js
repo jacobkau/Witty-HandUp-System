@@ -7,6 +7,8 @@ import messageRoutes from './routes/messages.js';
 import authRoutes from './routes/auth.js';
 import taskRoutes from './routes/tasks.js';
 import adminRoutes from './routes/admin.js';
+import notificationRoutes from './routes/notifications.js';
+
 
 dotenv.config();
 
@@ -39,6 +41,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/', (req, res) => {
   res.send('HandUp Server is Running');
