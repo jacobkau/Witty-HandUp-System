@@ -9,7 +9,7 @@ import {
 import { 
   LocationOn, AccessTime, Star, Gavel, 
   Phone, Delete, Edit, Directions, Map as MapIcon,
-  Chat as ChatIcon, Close as CloseIcon, Person as PersonIcon, CheckCircle, Payment
+  Chat as ChatIcon, Close as CloseIcon, Person as PersonIcon, CheckCircle, Payment, DoneAll
 } from "@mui/icons-material";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -62,6 +62,19 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     }
   };
 
+  // NEW HANDLER
+  const handleMarkWorkDone = async () => {
+    setIsProcessing(true);
+    try {
+      const res = await api.put(`/tasks/${task._id}/mark-work-completed`);
+      onUpdate(res.data.data);
+    } catch (err) { 
+      setError(err.response?.data?.error || "Failed to update"); 
+    } finally { 
+      setIsProcessing(false); 
+    }
+  };
+
   const handleSubmitPayment = async () => {
     if (!paymentCode.trim()) return;
     setIsProcessing(true);
@@ -100,6 +113,16 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     }
   };
 
+  const getStatusChip = () => {
+    let color = 'warning';
+    if (task.status === 'claimed') color = 'info';
+    if (task.status === 'work_completed') color = 'secondary';
+    if (task.status === 'awaiting_verification') color = 'secondary';
+    if (task.status === 'completed') color = 'success';
+    
+    return <Chip label={task.status.replace('_', ' ').toUpperCase()} color={color} size="small" sx={{ fontWeight: 'bold' }} />
+  }
+
   return (
     <Card sx={{ 
       height: '100%', display: 'flex', flexDirection: 'column',
@@ -117,11 +140,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
         {/* HEADER */}
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
           <Typography variant="h6" fontWeight="bold" lineHeight={1.2}>{task.title}</Typography>
-          <Chip label={task.status.replace('_', ' ').toUpperCase()} color={
-            task.status === 'open' ? 'warning' : 
-            task.status === 'claimed' ? 'info' : 
-            task.status === 'awaiting_verification' ? 'secondary' : 'success'
-          } size="small" sx={{ fontWeight: 'bold' }} />
+          {getStatusChip()}
         </Stack>
 
         <Stack direction="row" spacing={1} mt={1.5} mb={2} flexWrap="wrap">
@@ -208,8 +227,8 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           </Box>
         )}
 
-        {/* CLAIMED / AWAITING VERIFICATION / COMPLETED */}
-        {(task.status === 'claimed' || task.status === 'awaiting_verification' || task.status === 'completed') && task.helper && (
+        {/* CLAIMED / WORK COMPLETED / AWAITING VERIFICATION / COMPLETED */}
+        {['claimed', 'work_completed', 'awaiting_verification', 'completed'].includes(task.status) && task.helper && (
           <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #f0f0f0' }}>
             
             <Box sx={{ bgcolor: 'grey.50', p: 1.5, borderRadius: 2, mb: 2 }}>
@@ -217,8 +236,6 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
               <Stack direction="row" spacing={1.5} alignItems="center" mt={1}>
                 <Avatar sx={{ width: 36, height: 36, bgcolor: 'info.main' }}>{task.helper?.name?.charAt(0)}</Avatar>
                 <Box flexGrow={1}>
-                  
-                  {/* ✅ RATING ADDED BACK HERE */}
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <Typography variant="body2" fontWeight="bold">{task.helper?.name}</Typography>
                     {task.helper?.numReviews > 0 && (
@@ -247,27 +264,44 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
                 </Button>
               )}
 
-              {/* Requester Submits Payment */}
+              {/* 1. HELPER MARKS WORK DONE */}
+              {task.status === 'claimed' && isHelper && (
+                <Button variant="contained" color="primary" startIcon={<DoneAll />} fullWidth onClick={handleMarkWorkDone} disabled={isProcessing} sx={{ textTransform: 'none', fontWeight: 'bold' }}>
+                  Mark Work as Done
+                </Button>
+              )}
               {task.status === 'claimed' && isCreator && (
-                <Stack spacing={1} sx={{ mt: 1 }}>
-                  <Typography variant="caption" color="text.secondary">Send KES {task.price} via M-Pesa and enter the code below:</Typography>
-                  <TextField size="small" placeholder="e.g. QWE123RTY" value={paymentCode} onChange={(e) => setPaymentCode(e.target.value)} />
-                  <Button variant="contained" color="secondary" startIcon={<Payment />} onClick={handleSubmitPayment} disabled={isProcessing || !paymentCode}>
+                <Typography variant="caption" color="text.secondary" textAlign="center">Waiting for helper to complete the work...</Typography>
+              )}
+
+              {/* 2. REQUESTER SUBMITS PAYMENT */}
+              {task.status === 'work_completed' && isCreator && (
+                <Stack spacing={1} sx={{ mt: 1, bgcolor: 'success.50', p: 1.5, borderRadius: 1, border: '1px solid #a5d6a7' }}>
+                  <Typography variant="caption" color="success.main" fontWeight="bold">Helper has finished the work! Send KES {task.price} via M-Pesa:</Typography>
+                  <TextField size="small" placeholder="e.g. QWE123RTY" value={paymentCode} onChange={(e) => setPaymentCode(e.target.value)} sx={{ bgcolor: 'white' }} />
+                  <Button variant="contained" color="success" startIcon={<Payment />} onClick={handleSubmitPayment} disabled={isProcessing || !paymentCode} sx={{ textTransform: 'none' }}>
                     Submit Payment Code
                   </Button>
                 </Stack>
               )}
+              {task.status === 'work_completed' && isHelper && (
+                <Typography variant="caption" color="success.main" textAlign="center">You marked the work as done. Waiting for the requester to pay...</Typography>
+              )}
 
-              {/* Helper Confirms Payment */}
+              {/* 3. HELPER CONFIRMS PAYMENT */}
               {task.status === 'awaiting_verification' && isHelper && (
                 <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 2 }}>
                   <Typography variant="caption" color="text.secondary" display="block" mb={1}>Transaction Code: <strong>{task.paymentCode}</strong></Typography>
-                  <Button variant="contained" color="success" startIcon={<CheckCircle />} fullWidth onClick={handleConfirmPayment} disabled={isProcessing}>
+                  <Button variant="contained" color="success" startIcon={<CheckCircle />} fullWidth onClick={handleConfirmPayment} disabled={isProcessing} sx={{ textTransform: 'none' }}>
                     Confirm Payment Received
                   </Button>
                 </Box>
               )}
+              {task.status === 'awaiting_verification' && isCreator && (
+                <Typography variant="caption" color="text.secondary" textAlign="center">Payment code submitted. Waiting for helper to confirm...</Typography>
+              )}
 
+              {/* 4. COMPLETED */}
               {task.status === 'completed' && (
                  <Chip label="Task Completed & Paid" color="success" sx={{ py: 1, width: '100%', fontWeight: 'bold' }} />
               )}
