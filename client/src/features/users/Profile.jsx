@@ -123,7 +123,7 @@ export default function Profile() {
       <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
         
         {/* Header */}
-        <Box sx={{ bgcolor: 'primary.main', color: 'white', p: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+        <Box sx={{ bgcolor: '#0f172a', color: 'white', p: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
           <Box display="flex" alignItems="center" gap={3}>
             <Avatar sx={{ width: 80, height: 80, fontSize: '2rem', bgcolor: 'white', color: 'primary.main', fontWeight: 'bold' }}>
               {user.name?.charAt(0).toUpperCase()}
