@@ -1,65 +1,44 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 
-const taskSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: [true, 'Please add a title'],
-    trim: true,
-    maxlength: [100, 'Title cannot exceed 100 chars']
-  },
-  description: {
-    type: String,
-    required: [true, 'Please add a description']
-  },
-  category: {
-    type: String,
-    enum: ['errands', 'repairs', 'education', 'donations', 'other'],
-    required: true
-  },
-  status: {
-    type: String,
-    enum: ['open', 'claimed', 'completed'],
-    default: 'open'
-  },
-  location: {
-    type: {
-      type: String,
-      enum: ['Point'],
-      required: true
-    },
-    coordinates: {
-      type: [Number],
-      required: true,
-      index: '2dsphere' 
-    },
-    address: String
-  },
-  deadline: Date,
-  requester: {
-    type: mongoose.Schema.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  createdBy: {
-    type: mongoose.Schema.ObjectId,
-    ref: 'User'
-  },
-  helper: {
-    type: mongoose.Schema.ObjectId,
-    ref: 'User'
-  },
-  isRated: {
-    type: Boolean,
-    default: false
-  },
-  ratingValue: { 
-    type: Number, 
-    min: 1, 
-    max: 5 
-  }
-}, { timestamps: true });
+const UserSchema = new mongoose.Schema({
+  name: { type: String, required: [true, 'Please add a name'], trim: true, maxlength: 50 },
+  email: { type: String, required: [true, 'Please add an email'], unique: true, lowercase: true },
+  password: { type: String, required: [true, 'Please add a password'], minlength: 6, select: false },
+  phone: { type: String, trim: true, default: '' },
+  role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  walletBalance: { type: Number, default: 5000 }, 
+  skills: [{ type: String, trim: true }],
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
+  rating: { type: Number, default: 0 },
+  numReviews: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
 
-taskSchema.index({ location: '2dsphere' });
+UserSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+});
 
-const Task = mongoose.model('Task', taskSchema);
-export default Task;
+UserSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
+});
+
+UserSchema.methods.matchPassword = async function(enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
+UserSchema.methods.getResetPasswordToken = function() {
+  const resetToken = crypto.randomBytes(20).toString('hex');
+  this.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+  return resetToken;
+};
+
+export default mongoose.model('User', UserSchema);
