@@ -12,8 +12,9 @@ export const getTasks = async (req, res) => {
 
     let query = {};
     
-    // Status filter
-    if (req.query.status) {
+    if (req.query.status === 'claimed') {
+      query.status = { $in: ['claimed', 'work_completed', 'awaiting_verification'] };
+    } else if (req.query.status) {
       query.status = req.query.status;
     } else {
       query.status = { $ne: "completed" };
