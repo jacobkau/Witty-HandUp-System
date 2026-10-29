@@ -1,202 +1,178 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import useAuth from '../auth/useAuth';
-import api from '../../lib/api';
+import { Box, Container, Typography, Avatar, Button, Paper, Stack, Chip, Divider } from '@mui/material';
 import { 
-  Box, Typography, Grid, Paper, CircularProgress, Alert, 
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, 
-  Chip, Avatar, Button, Dialog, DialogTitle, DialogContent, DialogActions,
-  Tooltip
-} from '@mui/material';
-import { Block, CheckCircle, Delete, Warning } from '@mui/icons-material';
+  GitHub, LinkedIn, Email, Code, Storage, Cloud, 
+  Terminal, Javascript, DeveloperMode, ArrowBack 
+} from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 
-export default function AdminDashboard() {
-  const { user } = useAuth();
+export default function DeveloperProfile() {
   const navigate = useNavigate();
-  
-  const [stats, setStats] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  
-  // Modal State
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [statsRes, usersRes] = await Promise.all([
-        api.get('/admin/stats'),
-        api.get('/admin/users')
-      ]);
-      setStats(statsRes.data.data);
-      setUsers(usersRes.data.data);
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load admin data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user?.role === 'admin') fetchData();
-    else {
-      setError('Access Denied. Admin only.');
-      setLoading(false);
-    }
-  }, [user]);
-
-  const handleToggleStatus = async (userId) => {
-    try {
-      await api.put(`/admin/users/${userId}/toggle`);
-      fetchData(); // Refresh data
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to toggle user status');
-    }
-  };
-
-  const handleDeleteConfirm = async () => {
-    setIsProcessing(true);
-    try {
-      await api.delete(`/admin/users/${selectedUser._id}`);
-      setDeleteModalOpen(false);
-      fetchData();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to delete user');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  if (loading) return <Box display="flex" justifyContent="center" p={6}><CircularProgress /></Box>;
-
-  if (error) {
-    return (
-      <Box textAlign="center" p={6}>
-        <Alert severity="error" sx={{ mb: 2, maxWidth: 500, mx: 'auto' }}>{error}</Alert>
-        <Button onClick={() => navigate('/tasks')} variant="outlined">Back to Dashboard</Button>
-      </Box>
-    );
-  }
+  const techStack = [
+    { label: 'React.js', icon: <Code /> },
+    { label: 'Node.js', icon: <Terminal /> },
+    { label: 'MongoDB', icon: <Storage /> },
+    { label: 'Express.js', icon: <DeveloperMode /> },
+    { label: 'Material-UI', icon: <Javascript /> },
+    { label: 'Socket.IO', icon: <Cloud /> },
+  ];
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: 'auto', p: { xs: 2, md: 4 } }}>
+    <Box sx={{ bgcolor: '#f8fafc', minHeight: '100vh', pb: 10 }}>
       
-      <Typography variant="h4" fontWeight="bold" mb={1}>Admin Control Panel</Typography>
-      <Typography variant="body2" color="text.secondary" mb={4}>Manage users and monitor system activity</Typography>
-
-      {/* Stats Grid */}
-      <Grid container spacing={3} mb={6}>
-        {[
-          { title: 'Total Users', value: stats?.totalUsers, color: 'primary.main' },
-          { title: 'Total Tasks', value: stats?.totalTasks, color: 'success.main' },
-          { title: 'Active Tasks', value: stats?.activeTasks, color: 'warning.main' },
-          { title: 'Total Volume', value: `KES ${stats?.totalVolume?.toLocaleString() || 0}`, color: 'text.primary' }
-        ].map((stat, i) => (
-          <Grid item xs={12} sm={6} md={3} key={i}>
-            <Paper elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-              <Typography variant="body2" color="text.secondary" fontWeight="bold" textTransform="uppercase" mb={1}>
-                {stat.title}
-              </Typography>
-              <Typography variant="h4" fontWeight="bold" color={stat.color}>
-                {stat.value}
-              </Typography>
-            </Paper>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* Users Table */}
-      <Typography variant="h6" fontWeight="bold" mb={2}>User Management</Typography>
-      <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-        <Table>
-          <TableHead sx={{ bgcolor: 'grey.50' }}>
-            <TableRow>
-              <TableCell>User</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Role</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Wallet (KES)</TableCell>
-              <TableCell align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {users.map((u) => (
-              <TableRow key={u._id} hover>
-                <TableCell>
-                  <Box display="flex" alignItems="center" gap={1.5}>
-                    <Avatar sx={{ width: 32, height: 32, fontSize: 14 }}>{u.name?.charAt(0)}</Avatar>
-                    <Typography variant="body2" fontWeight="medium">{u.name}</Typography>
-                  </Box>
-                </TableCell>
-                <TableCell>{u.email}</TableCell>
-                <TableCell>
-                  <Chip label={u.role.toUpperCase()} size="small" color={u.role === 'admin' ? 'primary' : 'default'} />
-                </TableCell>
-                <TableCell>
-                  <Chip 
-                    label={u.isActive ? 'Active' : 'Inactive'} 
-                    size="small" 
-                    color={u.isActive ? 'success' : 'error'} 
-                    variant="outlined"
-                  />
-                </TableCell>
-                <TableCell>{u.walletBalance?.toLocaleString() || 0}</TableCell>
-                <TableCell align="right">
-                  {u.role !== 'admin' && (
-                    <Box display="flex" justifyContent="flex-end" gap={1}>
-                      <Tooltip title={u.isActive ? "Deactivate User" : "Activate User"}>
-                        <Button 
-                          size="small" 
-                          variant="outlined" 
-                          color={u.isActive ? "warning" : "success"}
-                          onClick={() => handleToggleStatus(u._id)}
-                          sx={{ minWidth: 'auto', p: 1 }}
-                        >
-                          {u.isActive ? <Block fontSize="small" /> : <CheckCircle fontSize="small" />}
-                        </Button>
-                      </Tooltip>
-                      <Tooltip title="Delete User">
-                        <Button 
-                          size="small" 
-                          variant="outlined" 
-                          color="error"
-                          onClick={() => { setSelectedUser(u); setDeleteModalOpen(true); }}
-                          sx={{ minWidth: 'auto', p: 1 }}
-                        >
-                          <Delete fontSize="small" />
-                        </Button>
-                      </Tooltip>
-                    </Box>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {/* DELETE CONFIRMATION MODAL */}
-      <Dialog open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'error.main' }}>
-          <Warning /> Confirm Deletion
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to permanently delete <strong>{selectedUser?.name}</strong>? 
-            This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteModalOpen(false)} disabled={isProcessing}>Cancel</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained" disabled={isProcessing}>
-            {isProcessing ? 'Deleting...' : 'Delete User'}
+      {/* HERO BANNER - Solid Dark Color */}
+      <Box sx={{ 
+        bgcolor: '#0f172a', 
+        color: 'white', 
+        pt: 8, 
+        pb: 12, 
+        textAlign: 'center'
+      }}>
+        <Container maxWidth="md">
+          <Button 
+            startIcon={<ArrowBack />} 
+            onClick={() => navigate(-1)} 
+            sx={{ color: '#94a3b8', mb: 4, textTransform: 'none', '&:hover': { color: 'white' } }}
+          >
+            Back to App
           </Button>
-        </DialogActions>
-      </Dialog>
 
+          <Avatar 
+            src="https://res.cloudinary.com/ozrcvfms/image/upload/v1792083177/admins/cwoapxllb9npcwljm07m.jpg" 
+            alt="Jacob Kau"
+            sx={{ 
+              width: 150, height: 150, mx: 'auto', mb: 3, 
+              border: '4px solid #1e293b', boxShadow: 3
+            }}
+          />
+          
+          <Typography variant="h3" fontWeight="800" gutterBottom>
+            Jacob Kau
+          </Typography>
+          <Typography variant="h6" sx={{ color: '#94a3b8', mb: 2, fontWeight: 400 }}>
+            Full-Stack Software Engineer
+          </Typography>
+          
+          <Chip 
+            label="Creator of Witty HandUp System" 
+            sx={{ bgcolor: '#1e293b', color: 'white', fontWeight: 'bold', mb: 4 }} 
+          />
+
+          <Stack direction="row" spacing={2} justifyContent="center">
+            <Button 
+              variant="contained" 
+              startIcon={<GitHub />} 
+              href="https://github.com/jacobkau/HandUp.git" 
+              target="_blank"
+              sx={{ bgcolor: '#2563eb', color: 'white', '&:hover': { bgcolor: '#1d4ed8' }, textTransform: 'none' }}
+            >
+              GitHub Repo
+            </Button>
+            <Button 
+              variant="outlined" 
+              startIcon={<LinkedIn />} 
+              href="https://www.linkedin.com/in/jacob-mwambwa-8b7296362" 
+              target="_blank"
+              sx={{ color: 'white', borderColor: '#475569', '&:hover': { borderColor: '#94a3b8', bgcolor: 'rgba(255,255,255,0.05)' }, textTransform: 'none' }}
+            >
+              LinkedIn
+            </Button>
+          </Stack>
+        </Container>
+      </Box>
+
+      {/* CONTENT SECTION */}
+      <Container maxWidth="lg" sx={{ mt: -8 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', md: 'row' }, 
+          gap: 4, 
+          alignItems: 'stretch' 
+        }}>
+          
+          {/* LEFT COLUMN: About */}
+          <Box sx={{ flex: 1.5 }}> {/* Takes up a bit more space than the right column */}
+            <Paper elevation={0} sx={{ p: 4, borderRadius: 3, height: '100%', border: '1px solid #e2e8f0' }}>
+              <Typography variant="h5" fontWeight="bold" sx={{ color: '#1e293b' }} gutterBottom>
+                About the Developer
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+              <Typography variant="body1" sx={{ color: '#64748b' }} paragraph>
+                Hi, I'm Jacob. I am a passionate full-stack developer dedicated to building tools that solve real-world problems. 
+                Witty HandUp was born out of a desire to create a reliable, community-driven platform that connects people who need help with those willing to offer it, while ensuring both parties are protected.
+              </Typography>
+              <Typography variant="body1" sx={{ color: '#64748b' }} paragraph>
+                I designed and engineered this entire system from the ground up. This includes the RESTful API, the real-time WebSocket architecture for the chat and notifications, the secure wallet escrow logic, and the responsive frontend you are using right now.
+              </Typography>
+              
+              <Typography variant="h6" fontWeight="bold" sx={{ color: '#1e293b', mt: 4 }} gutterBottom>
+                Let's Connect
+              </Typography>
+              <Stack direction="row" spacing={2} alignItems="center" mt={2}>
+                <Email sx={{ color: '#64748b' }} />
+                <Typography variant="body2" component="a" href="mailto:wittyhighbrowtechnologies@gmail.com" sx={{ color: '#2563eb', textDecoration: 'none', fontWeight: 'bold' }}>
+                  wittyhighbrowtechnologies@gmail.com
+                </Typography>
+              </Stack>
+            </Paper>
+          </Box>
+
+          {/* RIGHT COLUMN: Tech Stack & Stats */}
+          <Box sx={{ flex: 1 }}>
+            <Stack spacing={4}>
+              
+              {/* TECH STACK */}
+              <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: '1px solid #e2e8f0' }}>
+                <Typography variant="h6" fontWeight="bold" sx={{ color: '#1e293b' }} gutterBottom>
+                  Tech Stack Used
+                </Typography>
+                <Divider sx={{ mb: 3 }} />
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+                  {techStack.map((tech, index) => (
+                    <Chip 
+                      key={index} 
+                      icon={tech.icon} 
+                      label={tech.label} 
+                      variant="outlined" 
+                      sx={{ fontWeight: 'bold', bgcolor: '#f8fafc', borderColor: '#cbd5e1', color: '#334155' }}
+                    />
+                  ))}
+                </Box>
+              </Paper>
+
+              {/* APP STATS */}
+              <Paper elevation={0} sx={{ p: 4, borderRadius: 3, bgcolor: '#0f172a', color: 'white', border: '1px solid #1e293b' }}>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  System Architecture
+                </Typography>
+                <Divider sx={{ mb: 3, borderColor: '#1e293b' }} />
+                <Stack spacing={2}>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography variant="body2" sx={{ color: '#94a3b8' }}>Frontend</Typography>
+                    <Typography variant="body2" fontWeight="bold">React + Vite</Typography>
+                  </Box>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography variant="body2" sx={{ color: '#94a3b8' }}>Backend</Typography>
+                    <Typography variant="body2" fontWeight="bold">Node.js + Express</Typography>
+                  </Box>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography variant="body2" sx={{ color: '#94a3b8' }}>Database</Typography>
+                    <Typography variant="body2" fontWeight="bold">MongoDB Atlas</Typography>
+                  </Box>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography variant="body2" sx={{ color: '#94a3b8' }}>Real-time Engine</Typography>
+                    <Typography variant="body2" fontWeight="bold">Socket.IO</Typography>
+                  </Box>
+                  <Box display="flex" justifyContent="space-between">
+                    <Typography variant="body2" sx={{ color: '#94a3b8' }}>Hosting</Typography>
+                    <Typography variant="body2" fontWeight="bold">Render + Vercel</Typography>
+                  </Box>
+                </Stack>
+              </Paper>
+            </Stack>
+          </Box>
+        </Box>
+      </Container>
     </Box>
   );
 }
