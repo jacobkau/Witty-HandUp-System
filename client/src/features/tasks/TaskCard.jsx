@@ -9,7 +9,7 @@ import {
 import { 
   LocationOn, AccessTime, Star, Gavel, 
   Phone, Delete, Edit, Directions, Map as MapIcon,
-  Chat as ChatIcon, Close as CloseIcon
+  Chat as ChatIcon, Close as CloseIcon, Person as PersonIcon
 } from "@mui/icons-material";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -95,26 +95,20 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
       borderRadius: 2,
       '&:hover': { boxShadow: 3 }
     }}>
+      {/* URGENT BANNER */}
       {task.isUrgent && (
         <Box sx={{ bgcolor: 'error.main', color: 'white', textAlign: 'center', py: 0.8, fontSize: '0.85rem', fontWeight: 'bold' }}>
           🚨 URGENT TASK
         </Box>
       )}
       
-      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 3 }}>
+      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2.5 }}>
         
-        {/* HEADER */}
+        {/* HEADER: Title & Status */}
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
-          <Box>
-            <Typography variant="h6" fontWeight="bold" lineHeight={1.3} mb={1}>
-              {task.title}
-            </Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap">
-              <Chip label={`KES ${task.price}`} color="success" size="small" sx={{ fontWeight: 'bold' }} />
-              <Chip label={task.category.toUpperCase()} size="small" variant="outlined" />
-              <Chip icon={<AccessTime fontSize="small" />} label={new Date(task.createdAt).toLocaleDateString()} size="small" />
-            </Stack>
-          </Box>
+          <Typography variant="h6" fontWeight="bold" lineHeight={1.2}>
+            {task.title}
+          </Typography>
           <Chip 
             label={task.status.toUpperCase()} 
             color={task.status === 'open' ? 'warning' : task.status === 'claimed' ? 'info' : 'success'} 
@@ -123,8 +117,16 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           />
         </Stack>
 
+        {/* CHIPS: Price, Category, Date */}
+        <Stack direction="row" spacing={1} mt={1.5} mb={2} flexWrap="wrap">
+          <Chip label={`KES ${task.price}`} color="success" size="small" sx={{ fontWeight: 'bold' }} />
+          <Chip label={task.category.toUpperCase()} size="small" variant="outlined" />
+          <Chip icon={<AccessTime fontSize="small" />} label={new Date(task.createdAt).toLocaleDateString()} size="small" />
+        </Stack>
+
+        {/* EDIT/DELETE (Creator Only) */}
         {isCreator && (
-          <Stack direction="row" spacing={1} justifyContent="flex-end" mt={1}>
+          <Stack direction="row" spacing={1} justifyContent="flex-end" mb={1}>
             <Tooltip title="Edit Task">
               <IconButton size="small" onClick={() => navigate(`/tasks/edit/${task._id}`, { state: { taskData: task } })} disabled={task.status !== 'open'}>
                 <Edit fontSize="small" />
@@ -138,23 +140,27 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           </Stack>
         )}
 
-        <Divider sx={{ my: 2 }} />
+        <Divider sx={{ mb: 2 }} />
 
         {/* DESCRIPTION */}
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flexGrow: 1 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, flexGrow: 1 }}>
           {task.description}
         </Typography>
 
-        {/* LOCATION & CREATOR INFO */}
-        <Stack spacing={1.5} mb={2}>
+        {/* SMALL FIELDS IN ROWS */}
+        <Stack spacing={1.5} mb={2.5}>
+          {/* Location Row */}
           <Stack direction="row" spacing={1} alignItems="center">
             <LocationOn fontSize="small" color="action" />
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" noWrap>
               {task.location.address || "Coordinates pinned"}
             </Typography>
           </Stack>
+
+          {/* Creator Row */}
           <Stack direction="row" spacing={1} alignItems="center">
-            <Avatar sx={{ width: 24, height: 24, fontSize: 12, bgcolor: 'primary.main' }}>
+            <PersonIcon fontSize="small" color="action" />
+            <Avatar sx={{ width: 20, height: 20, fontSize: 10, bgcolor: 'primary.main' }}>
               {task.requester?.name?.charAt(0)}
             </Avatar>
             <Typography variant="caption" color="text.secondary">
@@ -162,8 +168,8 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
             </Typography>
             {task.requester?.phone && (
               <Tooltip title="Call Creator">
-                <IconButton size="small" href={`tel:${task.requester.phone}`} color="success">
-                  <Phone sx={{ fontSize: 16 }} />
+                <IconButton size="small" href={`tel:${task.requester.phone}`} color="success" sx={{ p: 0.5 }}>
+                  <Phone sx={{ fontSize: 14 }} />
                 </IconButton>
               </Tooltip>
             )}
@@ -172,22 +178,23 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
 
         {/* MAP & DIRECTIONS */}
         {hasValidLocation && (
-          <Box mb={2}>
+          <Box mb={2.5}>
             <Stack direction="row" spacing={1}>
-              <Button variant="outlined" size="small" startIcon={<MapIcon />} onClick={() => setShowMap(!showMap)}>
-                {showMap ? "Hide Map" : "Map"}
+              <Button variant="outlined" size="small" startIcon={<MapIcon />} onClick={() => setShowMap(!showMap)} sx={{ textTransform: 'none' }}>
+                {showMap ? "Hide Map" : "View Map"}
               </Button>
               <Button 
                 variant="contained" size="small" color="secondary" startIcon={<Directions />}
                 href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`}
                 target="_blank" rel="noopener noreferrer" disableElevation
+                sx={{ textTransform: 'none' }}
               >
                 Directions
               </Button>
             </Stack>
 
             {showMap && (
-              <Box sx={{ mt: 1, borderRadius: 2, overflow: 'hidden', border: '1px solid #e0e0e0' }}>
+              <Box sx={{ mt: 1.5, borderRadius: 2, overflow: 'hidden', border: '1px solid #e0e0e0' }}>
                 <iframe
                   width="100%" height="150" frameBorder="0" style={{ border: 0 }}
                   src={`https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
@@ -198,18 +205,18 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           </Box>
         )}
 
-        {/* OPEN STATE (BIDDING) */}
+        {/* BIDDING SECTION (OPEN) */}
         {task.status === 'open' && (
           <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #f0f0f0' }}>
             {isCreator && (
               <Box>
                 <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
                   <Gavel fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} /> 
-                  Bids ({task.bids?.length || 0})
+                  Bids Received ({task.bids?.length || 0})
                 </Typography>
                 {task.bids?.length > 0 ? (
                   task.bids.map(b => (
-                    <Box key={b._id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, bgcolor: 'grey.50', p: 1, borderRadius: 1 }}>
+                    <Box key={b._id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, bgcolor: 'grey.50', p: 1.5, borderRadius: 1 }}>
                       <Stack direction="row" spacing={1} alignItems="center">
                         <Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>{b.helper?.name?.charAt(0)}</Avatar>
                         <Box>
@@ -223,8 +230,8 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
                         </Box>
                       </Stack>
                       <Stack direction="row" spacing={1} alignItems="center">
-                        <Typography fontWeight="bold" color="success.main">KES {b.amount}</Typography>
-                        <Button size="small" variant="contained" onClick={() => handleAcceptBid(b._id)} disabled={isProcessing}>
+                        <Typography fontWeight="bold" color="success.main" variant="body2">KES {b.amount}</Typography>
+                        <Button size="small" variant="contained" onClick={() => handleAcceptBid(b._id)} disabled={isProcessing} disableElevation>
                           Accept
                         </Button>
                       </Stack>
@@ -239,19 +246,19 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
             {!isCreator && !hasBid && (
               <Stack direction="row" spacing={1}>
                 <TextField 
-                  size="small" type="number" label="Your Bid (KES)" 
+                  size="small" type="number" placeholder="Enter amount" 
                   value={bidAmount} onChange={(e) => setBidAmount(e.target.value)} fullWidth
                 />
-                <Button variant="contained" onClick={handlePlaceBid} disabled={isProcessing || !bidAmount}>
+                <Button variant="contained" onClick={handlePlaceBid} disabled={isProcessing || !bidAmount} disableElevation>
                   Bid
                 </Button>
               </Stack>
             )}
             
             {hasBid && (
-              <Box sx={{ bgcolor: 'success.50', p: 1, borderRadius: 1, border: '1px solid #a5d6a7' }}>
+              <Box sx={{ bgcolor: 'success.50', p: 1.5, borderRadius: 1, border: '1px solid #a5d6a7', textAlign: 'center' }}>
                 <Typography variant="body2" color="success.main" fontWeight="bold">
-                  ✓ Your bid of KES {hasBid.amount} is pending.
+                  ✓ Your bid of KES {hasBid.amount} is pending approval.
                 </Typography>
               </Box>
             )}
@@ -262,7 +269,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
         {(task.status === 'claimed' || task.status === 'completed') && task.helper && (
           <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #f0f0f0' }}>
             
-            {/* Helper Card */}
+            {/* Helper Info Row */}
             <Box sx={{ bgcolor: 'grey.50', p: 1.5, borderRadius: 2, mb: 2 }}>
               <Typography variant="caption" fontWeight="bold" color="text.secondary" textTransform="uppercase">
                 Assigned Helper
@@ -284,7 +291,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
                     )}
                   </Stack>
                   {task.helper?.phone && (
-                    <Typography variant="caption" component="a" href={`tel:${task.helper.phone}`} sx={{ color: 'primary.main', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="caption" component="a" href={`tel:${task.helper.phone}`} sx={{ color: 'primary.main', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
                       <Phone sx={{ fontSize: 12 }} /> {task.helper.phone}
                     </Typography>
                   )}
@@ -292,32 +299,36 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
               </Stack>
             </Box>
 
-            {/* Action Buttons */}
-            <Stack spacing={1}>
-              {isHelper && task.status === 'claimed' && (
-                <Button variant="contained" color="success" fullWidth onClick={handleComplete} disabled={isProcessing}>
-                  Mark as Complete
-                </Button>
-              )}
-              
-              {task.status === 'completed' && (
-                 <Chip label="Task Completed successfully" color="success" size="small" sx={{ width: '100%', py: 1 }} />
-              )}
-
-              {/* Chat Button (Full Width) */}
+            {/* ACTION BUTTONS (Bottom) */}
+            <Stack spacing={1.5}>
+              {/* Chat Button (Only if claimed/completed) */}
               {(isCreator || isHelper) && (
                 <Button 
                   variant="outlined" color="primary" size="medium" startIcon={<ChatIcon />} 
-                  onClick={() => setChatOpen(true)} fullWidth
+                  onClick={() => setChatOpen(true)} fullWidth sx={{ textTransform: 'none' }}
                 >
                   Open Chat / Messages
                 </Button>
               )}
+
+              {/* Mark Complete Button (Helper Only) */}
+              {isHelper && task.status === 'claimed' && (
+                <Button variant="contained" color="success" fullWidth size="large" onClick={handleComplete} disabled={isProcessing} disableElevation sx={{ textTransform: 'none', fontWeight: 'bold' }}>
+                  {isProcessing ? 'Completing...' : 'Mark as Complete'}
+                </Button>
+              )}
+              
+              {/* Completed Chip */}
+              {task.status === 'completed' && (
+                 <Box sx={{ textAlign: 'center', mt: 1 }}>
+                   <Chip label="Task Completed Successfully" color="success" sx={{ py: 1, width: '100%', fontWeight: 'bold' }} />
+                 </Box>
+              )}
             </Stack>
 
             {isCreator && task.status === 'claimed' && (
-              <Typography variant="caption" color="text.secondary" display="block" mt={1} textAlign="center">
-                Waiting for the helper to complete the task.
+              <Typography variant="caption" color="text.secondary" display="block" mt={1.5} textAlign="center">
+                Waiting for the helper to mark this task as complete.
               </Typography>
             )}
           </Box>
