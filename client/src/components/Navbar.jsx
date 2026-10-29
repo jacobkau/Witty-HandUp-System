@@ -27,7 +27,7 @@ export default function Navbar() {
       };
       checkNotifs();
     }
-  }, [user, location.pathname]); // Re-fetch on page change
+  }, [user, location.pathname]); 
 
   const getTabClass = (path) => {
     const isActive = location.pathname === path;
@@ -71,14 +71,14 @@ export default function Navbar() {
               </div>
 
               <div className="flex items-center space-x-4 pl-4 border-l border-gray-200">
-                {/* BELL ICON */}
                 <IconButton component={Link} to="/notifications" size="small">
                   <Badge badgeContent={unreadCount} color="error">
                     <NotificationsIcon sx={{ color: '#64748b' }} />
                   </Badge>
                 </IconButton>
 
-                <span className="text-gray-700 text-sm font-medium">Hello, {user.name} {user.role === 'admin'}</span>
+                <span className="text-gray-700 text-sm font-medium">Hello, {user.name}</span>
+                
                 <button onClick={logout} className="px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">Logout</button>
               </div>
             </div>
@@ -104,7 +104,7 @@ export default function Navbar() {
             <>
               <div className="px-4 py-2 border-b border-gray-100 mb-2">
                 <p className="text-sm text-gray-500">Logged in as</p>
-                <p className="font-bold text-gray-800">{user.name} {user.role === 'admin'}</p>
+                <p className="font-bold text-gray-800">{user.name}</p>
               </div>
               <Link to="/tasks" onClick={closeMenu} className={getMobileTabClass('/tasks')}>Dashboard</Link>
               <Link to="/tasks/new" onClick={closeMenu} className="block w-full text-center px-4 py-3 rounded-md text-base font-medium text-white bg-[#0f172a] hover:bg-[#1e293b] transition-colors">+ Add a New Task</Link>
