@@ -22,7 +22,7 @@ export default function TaskList() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [showMine, setShowMine] = useState(false); // NEW
+  const [showMine, setShowMine] = useState(false);
 
   useEffect(() => {
     const timerId = setTimeout(() => {
@@ -45,7 +45,8 @@ export default function TaskList() {
       if (user?.role === 'admin') endpoint += "&admin=true";
       if (category !== 'all') endpoint += `&category=${category}`;
       if (debouncedSearch) endpoint += `&search=${encodeURIComponent(debouncedSearch)}`;
-      if (showMine) endpoint += "&mine=true"; // NEW
+      // Only add mine=true if user is logged in
+      if (showMine && user) endpoint += "&mine=true";
 
       const res = await api.get(endpoint);
       setTasks(res.data.data || []);
@@ -101,12 +102,14 @@ export default function TaskList() {
           <MenuItem value="other">Other</MenuItem>
         </TextField>
 
-        {/* MY TASKS TOGGLE */}
-        <FormControlLabel
-          control={<Switch checked={showMine} onChange={(e) => { setShowMine(e.target.checked); setPage(1); }} color="primary" />}
-          label="Show my tasks/bids"
-          sx={{ whiteSpace: 'nowrap' }}
-        />
+        {/* Only show "My Tasks" if user is logged in */}
+        {user && (
+          <FormControlLabel
+            control={<Switch checked={showMine} onChange={(e) => { setShowMine(e.target.checked); setPage(1); }} color="primary" />}
+            label="Show my tasks/bids"
+            sx={{ whiteSpace: 'nowrap' }}
+          />
+        )}
       </Stack>
 
       <Paper elevation={0} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
