@@ -12,6 +12,7 @@ import ForgotPassword from '../features/auth/ForgotPassword';
 import ResetPassword from '../features/auth/ResetPassword';
 import AdminDashboard from '../features/admin/AdminDashboard'; 
 import DeveloperProfile from '../features/users/DeveloperProfile';
+import Notifications from '../features/users/Notifications';
 import Navbar from './Navbar';
 
 export default function Layout() {
@@ -41,6 +42,7 @@ export default function Layout() {
                 <Route path="/tasks/edit/:taskId" element={<EditTaskPage />} />
                 <Route path="/users/:userId" element={<Profile />} />
                 <Route path="/admin" element={<AdminDashboard />} /> 
+                <Route path="/notifications" element={<Notifications />} />
               </Route>
               
               {/* 404 Route */}
