@@ -37,8 +37,12 @@ const taskSchema = new mongoose.Schema({
   isPaid: { type: Boolean, default: false },
   
   isRated: { type: Boolean, default: false },
-  ratingValue: { type: Number, min: 1, max: 5 }
+  ratingValue: { type: Number, min: 1, max: 5 },
+
+   isReported: { type: Boolean, default: false },
+  reportReason: { type: String },
 }, { timestamps: true });
 
 taskSchema.index({ location: '2dsphere' });
+taskSchema.index({ title: 'text', description: 'text' });
 export default mongoose.model('Task', taskSchema);
