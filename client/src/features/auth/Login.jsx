@@ -30,6 +30,7 @@ export default function Login() {
     if (error) setError('');
   };
 
+  // Move handleGoogleResponse ABOVE useEffect
   const handleGoogleResponse = async (response) => {
     setIsSubmitting(true);
     setError('');
@@ -44,6 +45,7 @@ export default function Login() {
     }
   };
 
+  // Add a retry mechanism to wait for Google script to load
   useEffect(() => {
     let googleButtonRendered = false;
 
