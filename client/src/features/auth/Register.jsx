@@ -1,33 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import useAuth from './useAuth';
+import api from '../../lib/api';
 import { 
-  TextField, 
-  Button, 
-  Container, 
-  Typography,
-  Box,
-  Alert,
-  CircularProgress,
-  InputAdornment,
-  IconButton,
-  Paper,
-  Divider
+  TextField, Button, Container, Typography, Box, Alert, CircularProgress,
+  InputAdornment, IconButton, Paper, Divider
 } from '@mui/material';
-import { 
-  Visibility, 
-  VisibilityOff, 
-  LockOutlined,
-  Phone as PhoneIcon 
-} from '@mui/icons-material';
+import { Visibility, VisibilityOff, LockOutlined, Phone as PhoneIcon } from '@mui/icons-material';
 
 export default function Register() {
-  const { register } = useAuth();
+  const { register, loginWithToken } = useAuth(); 
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '', // <-- Added phone to initial state
+    phone: '',
     password: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,6 +45,46 @@ export default function Register() {
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
+  const handleGoogleResponse = async (response) => {
+    setIsSubmitting(true);
+    setError('');
+    try {
+      const res = await api.post('/auth/google', { token: response.credential });
+      loginWithToken(res.data.token, res.data.user);
+      navigate('/tasks');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Google Authentication failed.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    let googleButtonRendered = false;
+
+    const initGoogle = () => {
+      if (window.google && !googleButtonRendered) {
+        window.google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID, 
+          callback: handleGoogleResponse,
+        });
+        
+        const buttonDiv = document.getElementById("googleSignUpDiv");
+        if (buttonDiv) {
+          window.google.accounts.id.renderButton(
+            buttonDiv,
+            { theme: "outline", size: "large", width: "100%", text: "signup_with" }
+          );
+          googleButtonRendered = true;
+        }
+      } else if (!window.google) {
+        setTimeout(initGoogle, 500);
+      }
+    };
+
+    initGoogle();
+  }, []);
 
   return (
     <Container component="main" maxWidth="xs">
@@ -124,7 +151,6 @@ export default function Register() {
             required
           />
 
-          {/* NEW: Phone Number Field */}
           <TextField
             label="Phone Number"
             type="tel"
@@ -207,6 +233,10 @@ export default function Register() {
               OR
             </Typography>
           </Divider>
+
+          <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+            <div id="googleSignUpDiv" style={{ width: '100%' }}></div>
+          </Box>
 
           <Box sx={{ textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
