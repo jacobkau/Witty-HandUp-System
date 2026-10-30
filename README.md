@@ -45,7 +45,7 @@ To ensure safety and transparency without integrating complex payment gateways, 
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 **Frontend:**
 *   React.js (Vite)
@@ -67,7 +67,7 @@ To ensure safety and transparency without integrating complex payment gateways, 
 
 ---
 
-## 🏗 System Architecture & Flow
+## System Architecture & Flow
 
 1. **Post Task (`open`):** Requester posts a task with a starting budget.
 2. **Bidding:** Helpers submit bids. The Requester can accept one bid, locking the task.
@@ -128,7 +128,7 @@ npm run dev
 
 ---
 
-## 📡 Core API Endpoints
+## Core API Endpoints
 
 ### Auth
 *   `POST /api/auth/register` - Register a new user
