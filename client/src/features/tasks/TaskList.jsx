@@ -39,9 +39,17 @@ export default function TaskList() {
   const loadTasks = async () => {
     try {
       setLoading(true);
-      // Tab 0 = Open, Tab 1 = In Progress (Claimed/Work Completed/Awaiting Verification), Tab 2 = Completed
-      let statusParam = tabValue === 0 ? "open" : tabValue === 1 ? "claimed" : "completed";
-      let endpoint = `/tasks?page=${page}&limit=12&status=${statusParam}`;
+      let endpoint = `/tasks?page=${page}&limit=12`;
+      
+      if (tabValue === 0) {
+        endpoint += "&status=open";
+      } else if (tabValue === 1) {
+        endpoint += "&status=claimed"; 
+      } else if (tabValue === 2) {
+        endpoint += "&status=completed";
+      } else if (tabValue === 3) {
+        endpoint += "&bidsOnly=true"; 
+      }
       
       if (user?.role === 'admin') endpoint += "&admin=true";
       if (category !== 'all') endpoint += `&category=${category}`;
@@ -105,17 +113,18 @@ export default function TaskList() {
         {user && (
           <FormControlLabel
             control={<Switch checked={showMine} onChange={(e) => { setShowMine(e.target.checked); setPage(1); }} color="primary" />}
-            label="Show my tasks/bids"
+            label="Show my tasks"
             sx={{ whiteSpace: 'nowrap' }}
           />
         )}
       </Stack>
 
       <Paper elevation={0} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={tabValue} onChange={handleTabChange} variant="fullWidth" textColor="primary" indicatorColor="primary">
+        <Tabs value={tabValue} onChange={handleTabChange} variant="scrollable" scrollButtons="auto" textColor="primary" indicatorColor="primary">
           <Tab label="Open Tasks" />
           <Tab label="In Progress" />
           <Tab label="Completed" />
+          {user && <Tab label="My Bids" />}
         </Tabs>
       </Paper>
 
@@ -149,7 +158,9 @@ export default function TaskList() {
       ) : (
         <Box textAlign="center" py={8}>
           <Typography variant="h6" color="text.secondary" gutterBottom>No tasks found</Typography>
-          <Typography variant="body2" color="text.secondary">Try adjusting your search terms or category filters.</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {tabValue === 3 ? "You haven't placed any bids yet." : "Try adjusting your search terms or category filters."}
+          </Typography>
         </Box>
       )}
 
