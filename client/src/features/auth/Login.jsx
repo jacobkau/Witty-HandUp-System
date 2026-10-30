@@ -30,20 +30,6 @@ export default function Login() {
     if (error) setError('');
   };
 
-  useEffect(() => {
-    if (window.google) {
-      window.google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID, 
-        callback: handleGoogleResponse,
-      });
-      
-      window.google.accounts.id.renderButton(
-        document.getElementById("googleSignInDiv"),
-        { theme: "outline", size: "large", width: "100%", text: "continue_with" }
-      );
-    }
-  }, []);
-
   const handleGoogleResponse = async (response) => {
     setIsSubmitting(true);
     setError('');
@@ -57,6 +43,32 @@ export default function Login() {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    let googleButtonRendered = false;
+
+    const initGoogle = () => {
+      if (window.google && !googleButtonRendered) {
+        window.google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID, 
+          callback: handleGoogleResponse,
+        });
+        
+        const buttonDiv = document.getElementById("googleSignInDiv");
+        if (buttonDiv) {
+          window.google.accounts.id.renderButton(
+            buttonDiv,
+            { theme: "outline", size: "large", width: "100%", text: "continue_with" }
+          );
+          googleButtonRendered = true;
+        }
+      } else if (!window.google) {
+        setTimeout(initGoogle, 500);
+      }
+    };
+
+    initGoogle();
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -150,6 +162,7 @@ export default function Login() {
             <div id="googleSignInDiv" className="w-full flex justify-center"></div>
           </div>
         </div>
+        
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
             Don't have an account?{' '}
