@@ -6,6 +6,9 @@ import CloseIcon from '@mui/icons-material/Close';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import { Badge, IconButton } from '@mui/material';
 import api from "../lib/api"; 
+import { io } from "socket.io-client";
+
+const socket = io(import.meta.env.DEV ? 'http://localhost:5000' : 'https://handup.onrender.com');
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -13,34 +16,47 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Fetch unread notifications count
   useEffect(() => {
     if (user) {
+      // 1. Fetch initial unread count
       const checkNotifs = async () => {
         try {
           const res = await api.get('/notifications');
           const unread = res.data.data.filter(n => !n.isRead).length;
           setUnreadCount(unread);
-        } catch (err) {
-          console.error(err);
-        }
+        } catch (err) { console.error(err); }
       };
       checkNotifs();
-    }
-  }, [user, location.pathname]); 
 
+      // 2. Request Browser Notification Permission
+      if (Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+
+      // 3. Listen to Socket for real-time Browser Notifications
+      socket.on(`notification-${user._id}`, (data) => {
+        setUnreadCount(prev => prev + 1);
+        if (Notification.permission === 'granted') {
+          new Notification("Witty HandUp", {
+            body: data.message,
+            icon: "/help.png"
+          });
+        }
+      });
+
+      return () => socket.off(`notification-${user._id}`);
+    }
+  }, [user, location.pathname]);
+
+  // ... (rest of the Navbar component remains the same as your previous code)
   const getTabClass = (path) => {
     const isActive = location.pathname === path;
-    return `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-      isActive ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:bg-gray-100'
-    }`;
+    return `px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:bg-gray-100'}`;
   };
 
   const getMobileTabClass = (path) => {
     const isActive = location.pathname === path;
-    return `block px-4 py-3 rounded-md text-base font-medium transition-colors ${
-      isActive ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:bg-gray-100'
-    }`;
+    return `block px-4 py-3 rounded-md text-base font-medium transition-colors ${isActive ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:bg-gray-100'}`;
   };
 
   const closeMenu = () => setIsMobileMenuOpen(false);
@@ -48,7 +64,6 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        
         <Link to="/" className="flex items-center gap-2 z-50" onClick={closeMenu}>
           <img src="/help.png" alt="Witty HandUp logo" className="h-8 w-auto object-contain" />
           <span className="text-xl font-bold text-blue-600 tracking-tight">Witty HandUp</span>
@@ -71,15 +86,12 @@ export default function Navbar() {
               </div>
 
               <div className="flex items-center space-x-4 pl-4 border-l border-gray-200">
-                {/* BELL ICON */}
                 <IconButton component={Link} to="/notifications" size="small">
                   <Badge badgeContent={unreadCount} color="error">
                     <NotificationsIcon sx={{ color: '#64748b' }} />
                   </Badge>
                 </IconButton>
-
                 <span className="text-gray-700 text-sm font-medium">Hello, {user.name}</span>
-                
                 <button onClick={logout} className="px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">Logout</button>
               </div>
             </div>
@@ -124,4 +136,3 @@ export default function Navbar() {
     </nav>
   );
 }
-
