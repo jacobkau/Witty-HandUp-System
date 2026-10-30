@@ -36,7 +36,6 @@ export const getTasks = async (req, res) => {
       if (!req.user || !req.user.id) {
         return res.status(401).json({ success: false, error: "You must be logged in" });
       }
-      
       query.$and = [
         { 
           $or: [
@@ -64,7 +63,6 @@ export const getTasks = async (req, res) => {
   }
 };
 
-// @desc    Create a task
 export const createTask = async (req, res) => {
   const { title, description, category, location, deadline, price, isUrgent } = req.body;
   try {
@@ -79,7 +77,6 @@ export const createTask = async (req, res) => {
   }
 };
 
-// @desc    Place a bid
 export const placeBid = async (req, res) => {
   try {
     const { amount, message } = req.body;
@@ -99,7 +96,6 @@ export const placeBid = async (req, res) => {
 
     await task.save({ validateModifiedOnly: true });
 
-    // Create Notification
     await Notification.create({
       recipient: task.requester._id,
       sender: req.user.id,
@@ -108,11 +104,10 @@ export const placeBid = async (req, res) => {
       message: `New bid of KES ${amount} placed on your task "${task.title}".`,
     });
 
-    // Real-time socket notification
+    // Socket for real-time browser notification
     const io = getIO();
     io.emit(`notification-${task.requester._id}`, { message: `New bid of KES ${amount} on "${task.title}"` });
 
-    // Send Email
     try {
       const bidder = await User.findById(req.user.id);
       await sendEmail(
@@ -120,9 +115,7 @@ export const placeBid = async (req, res) => {
         'New Bid Received on Witty HandUp', 
         `Hello ${task.requester.name},\n\n${bidder.name} has placed a bid of KES ${amount} on your task: "${task.title}".\n\nLog in to view the bid and accept it.\n\nBest regards,\nWitty HandUp Team`
       );
-    } catch (emailErr) {
-      console.error("Email failed to send:", emailErr);
-    }
+    } catch (emailErr) { console.error("Email failed:", emailErr); }
 
     const populatedTask = await Task.findById(task._id)
       .populate("requester", "name email phone rating numReviews")
@@ -134,7 +127,6 @@ export const placeBid = async (req, res) => {
   }
 };
 
-// @desc    Accept a bid
 export const acceptBid = async (req, res) => {
   try {
     const { bidId } = req.body;
@@ -150,7 +142,6 @@ export const acceptBid = async (req, res) => {
     task.helper = bid.helper;
     task.price = bid.amount; 
     task.status = "claimed";
-    
     await task.save();
 
     await Notification.create({
@@ -162,18 +153,12 @@ export const acceptBid = async (req, res) => {
     });
 
     const io = getIO();
-    io.emit(`notification-${bid.helper}`, { message: `Your bid was accepted for "${task.title}"` });
+    io.emit(`notification-${bid.helper}`, { message: `Your bid was accepted for "${task.title}"!` });
 
     try {
       const helper = await User.findById(bid.helper);
-      await sendEmail(
-        helper.email, 
-        'Your Bid Was Accepted! - Witty HandUp', 
-        `Hello ${helper.name},\n\nGreat news! Your bid of KES ${bid.amount} has been accepted for the task: "${task.title}".\n\nPlease log in to coordinate with the requester via chat and complete the task.\n\nBest regards,\nWitty HandUp Team`
-      );
-    } catch (emailErr) {
-      console.error("Email failed to send:", emailErr);
-    }
+      await sendEmail(helper.email, 'Your Bid Was Accepted! - Witty HandUp', `Hello ${helper.name},\n\nYour bid of KES ${bid.amount} was accepted for: "${task.title}".\n\nLog in to coordinate.`);
+    } catch (emailErr) { console.error("Email failed:", emailErr); }
 
     const populatedTask = await Task.findById(task._id)
       .populate("requester", "name email phone")
@@ -185,11 +170,9 @@ export const acceptBid = async (req, res) => {
   }
 };
 
-// @desc    Helper marks work as completed
 export const markWorkCompleted = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
-    
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
     if (!task.helper || task.helper.toString() !== req.user.id) return res.status(403).json({ success: false, error: "Only the helper can mark work as done" });
     if (task.status !== "claimed") return res.status(400).json({ success: false, error: "Task is not in claimed state" });
@@ -205,6 +188,9 @@ export const markWorkCompleted = async (req, res) => {
       message: `The helper has completed the work for "${task.title}". Please pay to proceed.`,
     });
 
+    const io = getIO();
+    io.emit(`notification-${task.requester}`, { message: `Work completed for "${task.title}". Please pay.` });
+
     const populatedTask = await Task.findById(task._id)
       .populate("requester", "name email phone rating numReviews")
       .populate("helper", "name email phone rating numReviews")
@@ -216,7 +202,6 @@ export const markWorkCompleted = async (req, res) => {
   }
 };
 
-// @desc    Submit Payment Code
 export const submitPayment = async (req, res) => {
   try {
     const { paymentCode } = req.body;
@@ -241,7 +226,6 @@ export const submitPayment = async (req, res) => {
   }
 };
 
-// @desc    Confirm Payment
 export const confirmPayment = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
@@ -264,7 +248,6 @@ export const confirmPayment = async (req, res) => {
   }
 };
 
-// @desc    Rate Task
 export const rateTask = async (req, res) => {
   try {
     const { rating } = req.body;
@@ -289,7 +272,6 @@ export const rateTask = async (req, res) => {
   }
 };
 
-// @desc    Update Task 
 export const updateTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
@@ -298,10 +280,7 @@ export const updateTask = async (req, res) => {
     const isOwner = task.requester.toString() === req.user.id;
     const isAdmin = req.user.role === 'admin';
 
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({ success: false, error: "Not authorized to update this task" });
-    }
-
+    if (!isOwner && !isAdmin) return res.status(403).json({ success: false, error: "Not authorized" });
     if (task.status !== "open") return res.status(400).json({ success: false, error: "Only open tasks can be updated" });
 
     const { title, description, category, location, deadline, price, isUrgent } = req.body;
@@ -320,7 +299,6 @@ export const updateTask = async (req, res) => {
   }
 };
 
-// @desc    Delete Task
 export const deleteTask = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
@@ -329,9 +307,7 @@ export const deleteTask = async (req, res) => {
     const isOwner = task.requester.toString() === req.user.id;
     const isAdmin = req.user.role === 'admin';
 
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({ success: false, error: "Not authorized to delete this task" });
-    }
+    if (!isOwner && !isAdmin) return res.status(403).json({ success: false, error: "Not authorized" });
 
     await task.deleteOne();
     res.status(200).json({ success: true, data: {} });
@@ -340,7 +316,6 @@ export const deleteTask = async (req, res) => {
   }
 };
 
-// @desc    Get My Tasks
 export const getMyTasks = async (req, res) => {
   try {
     const tasks = await Task.find({ $or: [{ requester: req.user.id }, { helper: req.user.id }] })
@@ -352,15 +327,13 @@ export const getMyTasks = async (req, res) => {
   }
 };
 
-// Cancel a bid
+// Cancel Bid
 export const cancelBid = async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
-    
     if (!task) return res.status(404).json({ success: false, error: "Task not found" });
     if (task.status !== "open") return res.status(400).json({ success: false, error: "Cannot cancel bid on a claimed task" });
 
-    // Remove the bid from the array
     task.bids = task.bids.filter(b => b.helper.toString() !== req.user.id);
     await task.save();
 
@@ -374,7 +347,7 @@ export const cancelBid = async (req, res) => {
   }
 };
 
-//  Report requester for not paying
+// Report Requester
 export const reportTask = async (req, res) => {
   try {
     const { reason } = req.body;
@@ -388,16 +361,13 @@ export const reportTask = async (req, res) => {
     task.reportReason = reason || "Requester refused to pay after work completion.";
     await task.save();
 
-    // Send urgent email to requester
     try {
       await sendEmail(
         task.requester.email,
         'URGENT: Payment Pending - Witty HandUp',
         `Hello ${task.requester.name},\n\nYou have an unpaid task: "${task.title}".\nThe helper has reported that you have not paid for the completed work.\n\nPlease log in and submit the payment code immediately to avoid account suspension.\n\nBest regards,\nAdmin Team`
       );
-    } catch (emailErr) {
-      console.error("Email failed to send:", emailErr);
-    }
+    } catch (emailErr) { console.error("Email failed:", emailErr); }
 
     res.status(200).json({ success: true, message: "Report submitted and requester notified." });
   } catch (err) {
