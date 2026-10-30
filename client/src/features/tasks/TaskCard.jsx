@@ -3,13 +3,13 @@ import api from "../../lib/api";
 import ChatBox from "./ChatBox";
 import { 
   Button, Card, CardContent, Typography, Chip, Stack, Box, Avatar, 
-  Divider, TextField, IconButton, Dialog, DialogTitle, 
+  Divider, TextField, Tooltip, IconButton, Dialog, DialogTitle, 
   DialogContent, DialogActions 
 } from "@mui/material";
 import { 
-  LocationOn, Star, Gavel, 
-  Phone, Delete, Edit, 
-  Chat as ChatIcon, Close as CloseIcon, Person as PersonIcon, CheckCircle, Payment, DoneAll
+  LocationOn, AccessTime, Star, Gavel, 
+  Phone, Delete, Edit, Directions, Map as MapIcon,
+  Chat as ChatIcon, Close as CloseIcon, Person as PersonIcon, CheckCircle, Payment, DoneAll, Warning
 } from "@mui/icons-material";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -22,6 +22,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
   const [paymentCode, setPaymentCode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [showMap, setShowMap] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
 
@@ -29,7 +30,11 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
   const isCreator = currentUserId === task?.requester?._id;
   const isHelper = currentUserId === task?.helper?._id;
   const isAdmin = user?.role === 'admin'; 
-  const hasBid = task?.bids?.find(b => (b.helper?._id || b.helper) === currentUserId);
+  const hasBid = task?.bids?.find(b => b.helper?._id === currentUserId);
+
+  const lng = task?.location?.coordinates?.[0] || 0;
+  const lat = task?.location?.coordinates?.[1] || 0;
+  const hasValidLocation = lng !== 0 && lat !== 0;
 
   const handlePlaceBid = async () => {
     if (!bidAmount) return;
@@ -38,11 +43,15 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
       const res = await api.post(`/tasks/${task._id}/bid`, { amount: Number(bidAmount), message: "I can do this!" });
       onUpdate(res.data.data);
       setBidAmount('');
-    } catch (err) { 
-      setError(err.response?.data?.error || "Bid failed"); 
-    } finally { 
-      setIsProcessing(false); 
-    }
+    } catch (err) { setError(err.response?.data?.error || "Bid failed"); } finally { setIsProcessing(false); }
+  };
+
+  const handleCancelBid = async () => {
+    setIsProcessing(true);
+    try {
+      const res = await api.delete(`/tasks/${task._id}/bid`);
+      onUpdate(res.data.data);
+    } catch (err) { setError(err.response?.data?.error || "Failed to cancel"); } finally { setIsProcessing(false); }
   };
 
   const handleAcceptBid = async (bidId) => {
@@ -50,11 +59,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     try {
       const res = await api.put(`/tasks/${task._id}/accept-bid`, { bidId });
       onUpdate(res.data.data);
-    } catch (err) { 
-      setError(err.response?.data?.error || "Failed to accept bid"); 
-    } finally { 
-      setIsProcessing(false); 
-    }
+    } catch (err) { setError(err.response?.data?.error || "Failed to accept bid"); } finally { setIsProcessing(false); }
   };
 
   const handleMarkWorkDone = async () => {
@@ -62,11 +67,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     try {
       const res = await api.put(`/tasks/${task._id}/mark-work-completed`);
       onUpdate(res.data.data);
-    } catch (err) { 
-      setError(err.response?.data?.error || "Failed to update"); 
-    } finally { 
-      setIsProcessing(false); 
-    }
+    } catch (err) { setError(err.response?.data?.error || "Failed to update"); } finally { setIsProcessing(false); }
   };
 
   const handleSubmitPayment = async () => {
@@ -75,11 +76,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     try {
       const res = await api.put(`/tasks/${task._id}/submit-payment`, { paymentCode });
       onUpdate(res.data.data);
-    } catch (err) { 
-      setError(err.response?.data?.error || "Failed to submit payment"); 
-    } finally { 
-      setIsProcessing(false); 
-    }
+    } catch (err) { setError(err.response?.data?.error || "Failed to submit payment"); } finally { setIsProcessing(false); }
   };
 
   const handleConfirmPayment = async () => {
@@ -87,10 +84,16 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     try {
       const res = await api.put(`/tasks/${task._id}/confirm-payment`);
       onUpdate(res.data.data);
-    } catch (err) { 
-      setError(err.response?.data?.error || "Failed to confirm payment"); 
-    } finally { 
-      setIsProcessing(false); 
+    } catch (err) { setError(err.response?.data?.error || "Failed to confirm payment"); } finally { setIsProcessing(false); }
+  };
+
+  const handleReport = async () => {
+    if (window.confirm("Are you sure the requester hasn't paid? This will alert the admin.")) {
+      setIsProcessing(true);
+      try {
+        await api.put(`/tasks/${task._id}/report`, { reason: "Requester not paying" });
+        setError("Report submitted. Admin will be in touch.");
+      } catch (err) { setError("Failed to report"); } finally { setIsProcessing(false); }
     }
   };
 
@@ -99,12 +102,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     try {
       await api.delete(`/tasks/${task._id}`);
       if (onDelete) onDelete(task._id);
-    } catch (err) {
-      setError(err.response?.data?.error || "Failed to delete task");
-    } finally {
-      setIsProcessing(false);
-      setDeleteConfirmOpen(false);
-    }
+    } catch (err) { setError(err.response?.data?.error || "Failed to delete task"); } finally { setIsProcessing(false); setDeleteConfirmOpen(false); }
   };
 
   const getStatusChip = () => {
@@ -113,14 +111,18 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     if (task.status === 'work_completed') color = 'secondary';
     if (task.status === 'awaiting_verification') color = 'secondary';
     if (task.status === 'completed') color = 'success';
-    
     return <Chip label={task.status.replace('_', ' ').toUpperCase()} color={color} size="small" sx={{ fontWeight: 'bold' }} />
   }
 
   return (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid #e0e0e0', boxShadow: 1, borderRadius: 2 }}>
+    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', border: '1px solid #e0e0e0', boxShadow: 1, borderRadius: 2, '&:hover': { boxShadow: 3 } }}>
+      {task.isUrgent && (
+        <Box sx={{ bgcolor: 'error.main', color: 'white', textAlign: 'center', py: 0.8, fontSize: '0.85rem', fontWeight: 'bold' }}>
+           URGENT TASK
+        </Box>
+      )}
+      
       <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2.5 }}>
-        
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
           <Typography variant="h6" fontWeight="bold" lineHeight={1.2}>{task.title}</Typography>
           {getStatusChip()}
@@ -129,6 +131,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
         <Stack direction="row" spacing={1} mt={1.5} mb={2} flexWrap="wrap">
           <Chip label={`KES ${task.price}`} color="success" size="small" sx={{ fontWeight: 'bold' }} />
           <Chip label={task.category.toUpperCase()} size="small" variant="outlined" />
+          {task.isReported && <Chip label="REPORTED" color="error" size="small" icon={<Warning />} />}
         </Stack>
 
         {(isCreator || isAdmin) && (
@@ -160,7 +163,6 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
           </Stack>
         </Stack>
 
-        {/* BIDDING SECTION */}
         {task.status === 'open' && (
           <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #f0f0f0' }}>
             {isCreator && (
@@ -182,14 +184,14 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
                     </Box>
                   ))
                 ) : (
-                  <Typography variant="caption" color="text.secondary">No bids yet.</Typography>
+                  <Typography variant="caption" color="text.secondary">Waiting for helpers to bid...</Typography>
                 )}
               </Box>
             )}
 
             {!isCreator && !hasBid && (
               <Stack direction="row" spacing={1}>
-                <TextField size="small" type="number" placeholder="Bid amount" value={bidAmount} onChange={(e) => setBidAmount(e.target.value)} fullWidth />
+                <TextField size="small" type="number" placeholder="Enter amount" value={bidAmount} onChange={(e) => setBidAmount(e.target.value)} fullWidth />
                 <Button variant="contained" onClick={handlePlaceBid} disabled={isProcessing || !bidAmount}>Bid</Button>
               </Stack>
             )}
@@ -197,75 +199,62 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
             {hasBid && (
               <Box sx={{ bgcolor: 'success.50', p: 1.5, borderRadius: 1, textAlign: 'center' }}>
                 <Typography variant="body2" color="success.main" fontWeight="bold">✓ Your bid of KES {hasBid.amount} is pending.</Typography>
+                <Button size="small" color="error" onClick={handleCancelBid} disabled={isProcessing} sx={{ mt: 1 }}>
+                  Cancel Bid
+                </Button>
               </Box>
             )}
           </Box>
         )}
 
-        {/* WORKFLOW */}
         {['claimed', 'work_completed', 'awaiting_verification', 'completed'].includes(task.status) && task.helper && (
           <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #f0f0f0' }}>
             <Box sx={{ bgcolor: 'grey.50', p: 1.5, borderRadius: 2, mb: 2 }}>
-              <Typography variant="caption" fontWeight="bold" color="text.secondary">HELPER</Typography>
+              <Typography variant="caption" fontWeight="bold" color="text.secondary" textTransform="uppercase">Assigned Helper</Typography>
               <Stack direction="row" spacing={1.5} alignItems="center" mt={1}>
                 <Avatar sx={{ width: 36, height: 36, bgcolor: 'info.main' }}>{task.helper?.name?.charAt(0)}</Avatar>
                 <Box>
                   <Typography variant="body2" fontWeight="bold">{task.helper?.name}</Typography>
-                  {task.helper?.phone && <Typography variant="caption" component="a" href={`tel:${task.helper.phone}`} sx={{ color: 'primary.main', textDecoration: 'none' }}>{task.helper.phone}</Typography>}
+                  {task.helper?.phone && (
+                    <Typography variant="caption" component="a" href={`tel:${task.helper.phone}`} sx={{ color: 'primary.main', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                      <Phone sx={{ fontSize: 12 }} /> {task.helper.phone}
+                    </Typography>
+                  )}
                 </Box>
               </Stack>
             </Box>
 
             <Stack spacing={1.5}>
               {(isCreator || isHelper || isAdmin) && (
-                <Button variant="outlined" size="small" startIcon={<ChatIcon />} onClick={() => setChatOpen(true)} fullWidth>Chat</Button>
+                <Button variant="outlined" color="primary" size="small" startIcon={<ChatIcon />} onClick={() => setChatOpen(true)} fullWidth sx={{ textTransform: 'none' }}>
+                  Open Chat
+                </Button>
               )}
 
               {task.status === 'claimed' && isHelper && (
-                <Button variant="contained" color="primary" startIcon={<DoneAll />} fullWidth onClick={handleMarkWorkDone} disabled={isProcessing}>Mark Work as Done</Button>
+                <Button variant="contained" color="primary" startIcon={<DoneAll />} fullWidth onClick={handleMarkWorkDone} disabled={isProcessing} sx={{ textTransform: 'none' }}>
+                  Mark Work as Done
+                </Button>
               )}
 
               {task.status === 'work_completed' && isCreator && (
                 <Stack spacing={1} sx={{ mt: 1, bgcolor: 'success.50', p: 1.5, borderRadius: 1 }}>
                   <Typography variant="caption" color="success.main" fontWeight="bold">Pay KES {task.price} via M-Pesa:</Typography>
-                  <TextField size="small" placeholder="Transaction code" value={paymentCode} onChange={(e) => setPaymentCode(e.target.value)} sx={{ bgcolor: 'white' }} />
+                  <TextField size="small" placeholder="Code" value={paymentCode} onChange={(e) => setPaymentCode(e.target.value)} sx={{ bgcolor: 'white' }} />
                   <Button variant="contained" color="success" startIcon={<Payment />} onClick={handleSubmitPayment} disabled={isProcessing || !paymentCode}>Submit Code</Button>
                 </Stack>
+              )}
+
+              {task.status === 'work_completed' && isHelper && (
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="caption" color="success.main" display="block" mb={1}>Waiting for payment...</Typography>
+                  <Button variant="outlined" color="error" size="small" fullWidth startIcon={<Warning />} onClick={handleReport} disabled={isProcessing}>
+                    Report Requester
+                  </Button>
+                </Box>
               )}
 
               {task.status === 'awaiting_verification' && isHelper && (
                 <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 2 }}>
                   <Typography variant="caption" display="block" mb={1}>Code: <strong>{task.paymentCode}</strong></Typography>
-                  <Button variant="contained" color="success" startIcon={<CheckCircle />} fullWidth onClick={handleConfirmPayment} disabled={isProcessing}>Confirm Received</Button>
-                </Box>
-              )}
-
-              {task.status === 'completed' && (
-                 <Chip label="Task Completed & Paid" color="success" sx={{ py: 1, width: '100%', fontWeight: 'bold' }} />
-              )}
-            </Stack>
-          </Box>
-        )}
-        
-        {error && <Typography color="error" variant="caption" mt={1}>{error}</Typography>}
-      </CardContent>
-
-      <Dialog open={chatOpen} onClose={() => setChatOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { height: '80vh' } }}>
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          Chat
-          <IconButton onClick={() => setChatOpen(false)}><CloseIcon /></IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ p: 0, bgcolor: '#f9f9f9' }}><ChatBox taskId={task._id} /></DialogContent>
-      </Dialog>
-
-      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
-        <DialogTitle>Delete Task?</DialogTitle>
-        <DialogContent><Typography>This action cannot be undone.</Typography></DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained">Delete</Button>
-        </DialogActions>
-      </Dialog>
-    </Card>
-  );
-}
+                  <Button variant="contained" color="
