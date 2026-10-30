@@ -14,7 +14,33 @@ export const getStats = async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 };
+export const getReportedTasks = async (req, res) => {
+  try {
+    const tasks = await Task.find({ isReported: true })
+      .populate('requester', 'name email')
+      .populate('helper', 'name email')
+      .sort({ updatedAt: -1 });
+    res.status(200).json({ success: true, data: tasks });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
 
+// Resolve report
+export const resolveReport = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ success: false, error: "Task not found" });
+
+    task.isReported = false;
+    task.reportReason = null;
+    await task.save();
+    
+    res.status(200).json({ success: true, message: "Report resolved" });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.find()
