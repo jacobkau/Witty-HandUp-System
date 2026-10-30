@@ -2,6 +2,7 @@ import Task from "../models/Task.js";
 import User from "../models/User.js";
 import Notification from '../models/Notification.js';
 import { sendEmail } from '../utils/sendEmail.js';
+import { getIO } from '../sockets/socket.js'; 
 
 // @desc    Get all tasks
 export const getTasks = async (req, res) => {
@@ -20,12 +21,10 @@ export const getTasks = async (req, res) => {
       query.status = { $ne: "completed" };
     }
 
-    // Category filter
     if (req.query.category && req.query.category !== 'all') {
       query.category = req.query.category;
     }
 
-    // Search filter
     if (req.query.search) {
       query.$or = [
         { title: { $regex: req.query.search, $options: 'i' } }, 
@@ -33,7 +32,6 @@ export const getTasks = async (req, res) => {
       ];
     }
 
-    // MINE filter
     if (req.query.mine === 'true') {
       if (!req.user || !req.user.id) {
         return res.status(401).json({ success: false, error: "You must be logged in" });
@@ -101,6 +99,7 @@ export const placeBid = async (req, res) => {
 
     await task.save({ validateModifiedOnly: true });
 
+    // Create Notification
     await Notification.create({
       recipient: task.requester._id,
       sender: req.user.id,
@@ -109,6 +108,11 @@ export const placeBid = async (req, res) => {
       message: `New bid of KES ${amount} placed on your task "${task.title}".`,
     });
 
+    // Real-time socket notification
+    const io = getIO();
+    io.emit(`notification-${task.requester._id}`, { message: `New bid of KES ${amount} on "${task.title}"` });
+
+    // Send Email
     try {
       const bidder = await User.findById(req.user.id);
       await sendEmail(
@@ -156,6 +160,9 @@ export const acceptBid = async (req, res) => {
       type: 'bid_accepted',
       message: `Your bid of KES ${bid.amount} was accepted for "${task.title}".`,
     });
+
+    const io = getIO();
+    io.emit(`notification-${bid.helper}`, { message: `Your bid was accepted for "${task.title}"` });
 
     try {
       const helper = await User.findById(bid.helper);
@@ -367,7 +374,7 @@ export const cancelBid = async (req, res) => {
   }
 };
 
-// Report requester for not paying
+//  Report requester for not paying
 export const reportTask = async (req, res) => {
   try {
     const { reason } = req.body;
