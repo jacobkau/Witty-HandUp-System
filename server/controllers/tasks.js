@@ -344,3 +344,56 @@ export const getMyTasks = async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 };
+
+// Cancel a bid
+export const cancelBid = async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    
+    if (!task) return res.status(404).json({ success: false, error: "Task not found" });
+    if (task.status !== "open") return res.status(400).json({ success: false, error: "Cannot cancel bid on a claimed task" });
+
+    // Remove the bid from the array
+    task.bids = task.bids.filter(b => b.helper.toString() !== req.user.id);
+    await task.save();
+
+    const populatedTask = await Task.findById(task._id)
+      .populate("requester", "name email phone rating numReviews")
+      .populate("bids.helper", "name rating numReviews");
+
+    res.status(200).json({ success: true, data: populatedTask });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+// Report requester for not paying
+export const reportTask = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const task = await Task.findById(req.params.id).populate('requester', 'name email');
+    
+    if (!task) return res.status(404).json({ success: false, error: "Task not found" });
+    if (task.helper.toString() !== req.user.id) return res.status(403).json({ success: false, error: "Only the helper can report this task" });
+    if (task.status !== "work_completed") return res.status(400).json({ success: false, error: "Can only report if work is completed but not paid" });
+
+    task.isReported = true;
+    task.reportReason = reason || "Requester refused to pay after work completion.";
+    await task.save();
+
+    // Send urgent email to requester
+    try {
+      await sendEmail(
+        task.requester.email,
+        'URGENT: Payment Pending - Witty HandUp',
+        `Hello ${task.requester.name},\n\nYou have an unpaid task: "${task.title}".\nThe helper has reported that you have not paid for the completed work.\n\nPlease log in and submit the payment code immediately to avoid account suspension.\n\nBest regards,\nAdmin Team`
+      );
+    } catch (emailErr) {
+      console.error("Email failed to send:", emailErr);
+    }
+
+    res.status(200).json({ success: true, message: "Report submitted and requester notified." });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
