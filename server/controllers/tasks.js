@@ -4,7 +4,8 @@ import Notification from '../models/Notification.js';
 import { sendEmail } from '../utils/sendEmail.js';
 import { getIO } from '../sockets/socket.js'; 
 
-// @desc    Get all tasks
+// In controllers/tasks.js -> getTasks
+
 export const getTasks = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -13,6 +14,7 @@ export const getTasks = async (req, res) => {
 
     let query = {};
     
+    // Status filter
     if (req.query.status === 'claimed') {
       query.status = { $in: ['claimed', 'work_completed', 'awaiting_verification'] };
     } else if (req.query.status) {
@@ -21,10 +23,12 @@ export const getTasks = async (req, res) => {
       query.status = { $ne: "completed" };
     }
 
+    // Category filter
     if (req.query.category && req.query.category !== 'all') {
       query.category = req.query.category;
     }
 
+    // Search filter
     if (req.query.search) {
       query.$or = [
         { title: { $regex: req.query.search, $options: 'i' } }, 
@@ -32,6 +36,15 @@ export const getTasks = async (req, res) => {
       ];
     }
 
+    // "My Bids" filter
+    if (req.query.bidsOnly === 'true') {
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({ success: false, error: "You must be logged in" });
+      }
+      query['bids.helper'] = req.user.id;
+    }
+
+    // MINE filter (Creator or Helper)
     if (req.query.mine === 'true') {
       if (!req.user || !req.user.id) {
         return res.status(401).json({ success: false, error: "You must be logged in" });
@@ -40,7 +53,6 @@ export const getTasks = async (req, res) => {
         { 
           $or: [
             { requester: req.user.id }, 
-            { 'bids.helper': req.user.id },
             { helper: req.user.id }
           ] 
         }
