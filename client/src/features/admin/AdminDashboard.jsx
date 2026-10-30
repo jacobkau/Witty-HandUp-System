@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useAuth from '../auth/useAuth'; // ✅ FIXED IMPORT PATH
+import useAuth from '../auth/useAuth';
 import api from '../../lib/api';
 import { 
   Box, Typography, Grid, Paper, CircularProgress, Alert, 
@@ -16,10 +16,10 @@ export default function AdminDashboard() {
   
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
+  const [reportedTasks, setReportedTasks] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // Modal State
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -27,12 +27,14 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [statsRes, usersRes] = await Promise.all([
+      const [statsRes, usersRes, reportsRes] = await Promise.all([
         api.get('/admin/stats'),
-        api.get('/admin/users')
+        api.get('/admin/users'),
+        api.get('/admin/reports') 
       ]);
       setStats(statsRes.data.data);
       setUsers(usersRes.data.data);
+      setReportedTasks(reportsRes.data.data);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to load admin data');
     } finally {
@@ -42,19 +44,14 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (user?.role === 'admin') fetchData();
-    else {
-      setError('Access Denied. Admin only.');
-      setLoading(false);
-    }
+    else { setError('Access Denied. Admin only.'); setLoading(false); }
   }, [user]);
 
   const handleToggleStatus = async (userId) => {
     try {
       await api.put(`/admin/users/${userId}/toggle`);
-      fetchData(); // Refresh data
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to toggle user status');
-    }
+      fetchData();
+    } catch (err) { alert(err.response?.data?.error || 'Failed to toggle'); }
   };
 
   const handleDeleteConfirm = async () => {
@@ -63,30 +60,24 @@ export default function AdminDashboard() {
       await api.delete(`/admin/users/${selectedUser._id}`);
       setDeleteModalOpen(false);
       fetchData();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to delete user');
-    } finally {
-      setIsProcessing(false);
-    }
+    } catch (err) { alert(err.response?.data?.error || 'Failed to delete'); } finally { setIsProcessing(false); }
+  };
+
+  // Resolve Report
+  const handleResolveReport = async (taskId) => {
+    try {
+      await api.put(`/admin/reports/${taskId}/resolve`);
+      setReportedTasks(prev => prev.filter(t => t._id !== taskId));
+    } catch (err) { alert("Failed to resolve report"); }
   };
 
   if (loading) return <Box display="flex" justifyContent="center" p={6}><CircularProgress /></Box>;
-
-  if (error) {
-    return (
-      <Box textAlign="center" p={6}>
-        <Alert severity="error" sx={{ mb: 2, maxWidth: 500, mx: 'auto' }}>{error}</Alert>
-        <Button onClick={() => navigate('/tasks')} variant="outlined">Back to Dashboard</Button>
-      </Box>
-    );
-  }
+  if (error) return <Box textAlign="center" p={6}><Alert severity="error">{error}</Alert></Box>;
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: { xs: 2, md: 4 } }}>
-      
       <Typography variant="h4" fontWeight="bold" mb={1}>Admin Control Panel</Typography>
-      <Typography variant="body2" color="text.secondary" mb={4}>Manage users and monitor system activity</Typography>
-
+      
       {/* Stats Grid */}
       <Grid container spacing={3} mb={6}>
         {[
@@ -97,18 +88,49 @@ export default function AdminDashboard() {
         ].map((stat, i) => (
           <Grid item xs={12} sm={6} md={3} key={i}>
             <Paper elevation={0} sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-              <Typography variant="body2" color="text.secondary" fontWeight="bold" textTransform="uppercase" mb={1}>
-                {stat.title}
-              </Typography>
-              <Typography variant="h4" fontWeight="bold" color={stat.color}>
-                {stat.value}
-              </Typography>
+              <Typography variant="body2" color="text.secondary" fontWeight="bold" textTransform="uppercase" mb={1}>{stat.title}</Typography>
+              <Typography variant="h4" fontWeight="bold" color={stat.color}>{stat.value}</Typography>
             </Paper>
           </Grid>
         ))}
       </Grid>
 
-      {/* Users Table */}
+      {/* Reported Tasks Section */}
+      <Typography variant="h6" fontWeight="bold" mb={2}>Reported Tasks (Needs Attention)</Typography>
+      <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, mb: 6 }}>
+        <Table>
+          <TableHead sx={{ bgcolor: 'error.50' }}>
+            <TableRow>
+              <TableCell>Task</TableCell>
+              <TableCell>Requester</TableCell>
+              <TableCell>Helper</TableCell>
+              <TableCell>Reason</TableCell>
+              <TableCell align="right">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {reportedTasks.length === 0 ? (
+              <TableRow><TableCell colSpan={5} align="center" sx={{ py: 4 }}>No reported tasks</TableCell></TableRow>
+            ) : (
+              reportedTasks.map((t) => (
+                <TableRow key={t._id}>
+                  <TableCell>{t.title}</TableCell>
+                  <TableCell>{t.requester?.name}</TableCell>
+                  <TableCell>{t.helper?.name}</TableCell>
+                  <TableCell><Chip label={t.reportReason} size="small" color="error" /></TableCell>
+                  <TableCell align="right">
+                    <Button size="small" variant="contained" color="success" onClick={() => handleResolveReport(t._id)}>
+                      Resolve
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* User Management */}
       <Typography variant="h6" fontWeight="bold" mb={2}>User Management</Typography>
       <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
         <Table>
@@ -118,7 +140,6 @@ export default function AdminDashboard() {
               <TableCell>Email</TableCell>
               <TableCell>Role</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell>Wallet (KES)</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -132,40 +153,18 @@ export default function AdminDashboard() {
                   </Box>
                 </TableCell>
                 <TableCell>{u.email}</TableCell>
-                <TableCell>
-                  <Chip label={u.role.toUpperCase()} size="small" color={u.role === 'admin' ? 'primary' : 'default'} />
-                </TableCell>
-                <TableCell>
-                  <Chip 
-                    label={u.isActive ? 'Active' : 'Inactive'} 
-                    size="small" 
-                    color={u.isActive ? 'success' : 'error'} 
-                    variant="outlined"
-                  />
-                </TableCell>
-                <TableCell>{u.walletBalance?.toLocaleString() || 0}</TableCell>
+                <TableCell><Chip label={u.role.toUpperCase()} size="small" color={u.role === 'admin' ? 'primary' : 'default'} /></TableCell>
+                <TableCell><Chip label={u.isActive ? 'Active' : 'Inactive'} size="small" color={u.isActive ? 'success' : 'error'} variant="outlined" /></TableCell>
                 <TableCell align="right">
                   {u.role !== 'admin' && (
                     <Box display="flex" justifyContent="flex-end" gap={1}>
-                      <Tooltip title={u.isActive ? "Deactivate User" : "Activate User"}>
-                        <Button 
-                          size="small" 
-                          variant="outlined" 
-                          color={u.isActive ? "warning" : "success"}
-                          onClick={() => handleToggleStatus(u._id)}
-                          sx={{ minWidth: 'auto', p: 1 }}
-                        >
+                      <Tooltip title={u.isActive ? "Deactivate" : "Activate"}>
+                        <Button size="small" variant="outlined" color={u.isActive ? "warning" : "success"} onClick={() => handleToggleStatus(u._id)}>
                           {u.isActive ? <Block fontSize="small" /> : <CheckCircle fontSize="small" />}
                         </Button>
                       </Tooltip>
-                      <Tooltip title="Delete User">
-                        <Button 
-                          size="small" 
-                          variant="outlined" 
-                          color="error"
-                          onClick={() => { setSelectedUser(u); setDeleteModalOpen(true); }}
-                          sx={{ minWidth: 'auto', p: 1 }}
-                        >
+                      <Tooltip title="Delete">
+                        <Button size="small" variant="outlined" color="error" onClick={() => { setSelectedUser(u); setDeleteModalOpen(true); }}>
                           <Delete fontSize="small" />
                         </Button>
                       </Tooltip>
@@ -178,25 +177,14 @@ export default function AdminDashboard() {
         </Table>
       </TableContainer>
 
-      {/* DELETE CONFIRMATION MODAL */}
       <Dialog open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'error.main' }}>
-          <Warning /> Confirm Deletion
-        </DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to permanently delete <strong>{selectedUser?.name}</strong>? 
-            This action cannot be undone.
-          </Typography>
-        </DialogContent>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'error.main' }}><Warning /> Confirm Deletion</DialogTitle>
+        <DialogContent><Typography>Delete <strong>{selectedUser?.name}</strong> permanently?</Typography></DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteModalOpen(false)} disabled={isProcessing}>Cancel</Button>
-          <Button onClick={handleDeleteConfirm} color="error" variant="contained" disabled={isProcessing}>
-            {isProcessing ? 'Deleting...' : 'Delete User'}
-          </Button>
+          <Button onClick={() => setDeleteModalOpen(false)}>Cancel</Button>
+          <Button onClick={handleDeleteConfirm} color="error" variant="contained">Delete</Button>
         </DialogActions>
       </Dialog>
-
     </Box>
   );
 }
