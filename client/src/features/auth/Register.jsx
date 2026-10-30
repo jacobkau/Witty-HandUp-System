@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'; 
 import { useNavigate, Link } from 'react-router-dom';
 import useAuth from './useAuth';
-import api from '../../lib/api';
+import api from '../../lib/api'; 
 import { 
   TextField, Button, Container, Typography, Box, Alert, CircularProgress,
   InputAdornment, IconButton, Paper, Divider
@@ -9,7 +9,7 @@ import {
 import { Visibility, VisibilityOff, LockOutlined, Phone as PhoneIcon } from '@mui/icons-material';
 
 export default function Register() {
-  const { register, loginWithToken } = useAuth(); 
+  const { register, loginWithToken } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
@@ -46,6 +46,7 @@ export default function Register() {
     setShowPassword(!showPassword);
   };
 
+  //  Google Login logic for Register page
   const handleGoogleResponse = async (response) => {
     setIsSubmitting(true);
     setError('');
@@ -234,6 +235,7 @@ export default function Register() {
             </Typography>
           </Divider>
 
+          {/*  Google Signup Button */}
           <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
             <div id="googleSignUpDiv" style={{ width: '100%' }}></div>
           </Box>
