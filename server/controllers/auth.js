@@ -4,6 +4,74 @@ import Task from '../models/Task.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { sendEmail } from '../utils/sendEmail.js'; 
+import { OAuth2Client } from 'google-auth-library';
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// @desc    Auth with Google
+// @route   POST /api/auth/google
+export const googleLogin = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ success: false, error: 'No token provided' });
+    }
+
+    // Verify the token with Google
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const { name, email, picture, sub } = ticket.getPayload();
+
+    // Check if user already exists
+    let user = await User.findOne({ email });
+
+    if (!user) {
+     
+      const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+      
+      user = await User.create({
+        name,
+        email,
+        password: randomPassword,
+        phone: '', 
+      });
+    }
+
+    // Check if user is active 
+    if (!user.isActive) {
+      return res.status(403).json({ success: false, error: 'Account deactivated. Contact support.' });
+    }
+
+    // Generate your normal JWT
+    const jwtToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '30d',
+    });
+
+    res.status(200).json({
+      success: true,
+      token: jwtToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        walletBalance: user.walletBalance,
+        skills: user.skills,
+        rating: user.rating,
+        numReviews: user.numReviews,
+      },
+    });
+
+  } catch (err) {
+    console.error('Google Auth Error:', err);
+    res.status(401).json({ success: false, error: 'Invalid Google token' });
+  }
+};
 
 // @desc    Register user
 export const register = async (req, res) => {
