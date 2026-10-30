@@ -46,6 +46,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     } catch (err) { setError(err.response?.data?.error || "Bid failed"); } finally { setIsProcessing(false); }
   };
 
+  // ✅ NEW: Cancel Bid
   const handleCancelBid = async () => {
     setIsProcessing(true);
     try {
@@ -87,6 +88,7 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
     } catch (err) { setError(err.response?.data?.error || "Failed to confirm payment"); } finally { setIsProcessing(false); }
   };
 
+  // ✅ NEW: Report Requester
   const handleReport = async () => {
     if (window.confirm("Are you sure the requester hasn't paid? This will alert the admin.")) {
       setIsProcessing(true);
@@ -257,4 +259,36 @@ export default function TaskCard({ task, onUpdate, onDelete }) {
               {task.status === 'awaiting_verification' && isHelper && (
                 <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 2 }}>
                   <Typography variant="caption" display="block" mb={1}>Code: <strong>{task.paymentCode}</strong></Typography>
-                  <Button variant="contained" color="
+                  <Button variant="contained" color="success" startIcon={<CheckCircle />} fullWidth onClick={handleConfirmPayment} disabled={isProcessing}>Confirm Received</Button>
+                </Box>
+              )}
+
+              {task.status === 'completed' && (
+                 <Chip label="Task Completed & Paid" color="success" sx={{ py: 1, width: '100%', fontWeight: 'bold' }} />
+              )}
+            </Stack>
+          </Box>
+        )}
+        
+        {error && <Typography color="error" variant="caption" mt={1} display="block">{error}</Typography>}
+      </CardContent>
+
+      <Dialog open={chatOpen} onClose={() => setChatOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { height: '80vh' } }}>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          Chat
+          <IconButton onClick={() => setChatOpen(false)}><CloseIcon /></IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, bgcolor: '#f9f9f9' }}><ChatBox taskId={task._id} /></DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
+        <DialogTitle>Delete Task?</DialogTitle>
+        <DialogContent><Typography>This action cannot be undone.</Typography></DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
+          <Button onClick={handleDeleteConfirm} color="error" variant="contained">Delete</Button>
+        </DialogActions>
+      </Dialog>
+    </Card>
+  );
+}
