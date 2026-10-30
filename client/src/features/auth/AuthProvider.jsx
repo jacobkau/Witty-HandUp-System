@@ -29,10 +29,14 @@ const AuthProvider = ({ children }) => {
       localStorage.setItem('token', res.data.token);
       setUser(res.data.user);
     } catch (err) {
-      // Extract the clean error message from the backend
       const message = err.response?.data?.error || 'Login failed. Please check your connection.';
       throw new Error(message); 
     }
+  };
+
+  const loginWithToken = (token, userData) => {
+    localStorage.setItem('token', token);
+    setUser(userData);
   };
 
   const register = async (userData) => {
@@ -46,7 +50,6 @@ const AuthProvider = ({ children }) => {
         phone: res.data.user.phone || ''      
       });
     } catch (err) {
-      // Extract the clean error message from the backend
       const message = err.response?.data?.error || 'Registration failed. Please try again.';
       throw new Error(message);
     }
@@ -62,7 +65,7 @@ const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, loginWithToken }}>
       {children}
     </AuthContext.Provider>
   );
